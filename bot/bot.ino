@@ -30,7 +30,7 @@
 #define ON                 0x01
 
 #define FAST               10
-#define MEDIUM             12
+#define MEDIUM             5
 #define SLOW               2
 
 #define BACKUP_TIMER       0
@@ -68,6 +68,7 @@ void backUp(void);
 void stopMtrs(void);
 void turnRight(void);
 void turnLeft(void);
+void respondToTape(void);
 
 /*---------------- Arduino Main Functions -------------------*/
 void setup() {  // setup() function required for Arduino
@@ -75,6 +76,24 @@ void setup() {  // setup() function required for Arduino
   Serial.println("Starting Bot...");
   RoachInit();
   TMRArd_InitTimer(0, TIME_INTERVAL);
+  attachInterrupt(0, respondToTape2, RISING);
+  attachInterrupt(1, respondToTape3, RISING);
+}
+
+//Respond to seeing tape on Pin 2
+void respondToTape2(void){
+  static int numTimes = 0;
+  
+   Serial.println("Saw Tape Back Left!");
+   Serial.println(numTimes++,DEC);
+}
+
+//Respond to seeing tape on Pin 3
+void respondToTape3(void){
+  static int numTimes = 0;
+  
+   Serial.println("Saw Tape Front!");
+   Serial.println(numTimes++,DEC);
 }
 
 void loop() {  // loop() function required for Arduino
