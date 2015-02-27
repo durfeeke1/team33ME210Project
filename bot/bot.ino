@@ -35,20 +35,34 @@
 
 #define BACKUP_TIMER       0
 #define TURN_TIMER         1
+#define EIGTH_SEC          125
+#define QUARTER_SEC          125
 #define HALF_SEC           500
+#define FULL_SEC           1000
 
 #define FRONT              0x00
 #define BACK               0x01
 
 /*------------------ STATES ----------------------------------*/
-#define INIT               0x00
-#define RUN                0x01
-#define STOP               0x02
-#define BACK_UP            0x03
-#define TURN               0x04
-#define STOPPED_BACKING_UP 0x05
-#define STOPPED_TURNING    0x06
+enum globalState {
+  INIT,
+  TAPE_SENSING,
+};
 
+
+/****** TAPE SENSING STATES ******/
+enum tapeSensingState {
+  TAPE_SENSING_INIT,
+  FOUND_TAPE,
+  BACKING_UP,
+  START_TURNING_RIGHT,
+  DRIVE_STRAIGHT,
+  TURNING_RIGHT
+};
+
+#define frontTapeSensorPin A2
+#define backRightTapeSensorPin A1
+#define backLeftTapeSensorPin A0
 
 
 /*---------------- Module Function Prototypes ---------------*/
@@ -58,8 +72,6 @@ unsigned char TestForLightOn(void);
 void RespToLightOn(void);
 unsigned char TestForLightOff(void);
 void RespToLightOff(void);
-unsigned char TestForBump(void);
-void RespToBump(void);
 unsigned char TestTimerExpired(unsigned char);
 void RespTimerExpired(void);
 void outputState(char);
@@ -68,7 +80,138 @@ void backUp(void);
 void stopMtrs(void);
 void turnRight(void);
 void turnLeft(void);
-void respondToTape(void);
+void respondToTapeBL(void);
+void respondToTapeFront(void);
+void senseTape(void);
+boolean isTapeSensorHigh(unsigned int,boolean);
+
+/**********************************/
+int globalState = TAPE_SENSING;
+int tapeSensingState = DRIVE_STRAIGHT;
+
+boolean isTapeSensorHigh(uint8_t tapeSensorPin, boolean prevStatus){
+    unsigned int currPinVal = analogRead(tapeSensorPin);
+    
+    if(tapeSensorPin == backLeftTapeSensorPin){
+      //Serial.print("pinval: ");
+      //Serial.println(currPinVal,DEC );
+    }
+    
+    //if last value was high
+    if(prevStatus == true){
+      //if analog value is greater than 2 volts
+      if(currPinVal > 275){
+          return true;
+      }else{
+          return false; 
+      }
+    }else{
+      if(currPinVal > 300){
+          return true;
+      }else{
+          return false; 
+      }
+    }
+}
+
+boolean frontTapeSensorHigh(void){
+  static boolean currStatus = false;
+  currStatus = isTapeSensorHigh(frontTapeSensorPin, currStatus);
+  return currStatus;
+}
+
+boolean backRightTapeSensorHigh(void){
+  static boolean currStatus = false;
+  currStatus = isTapeSensorHigh(backRightTapeSensorPin, currStatus);
+  return currStatus;
+}
+
+boolean backLeftTapeSensorHigh(void){
+  static boolean currStatus = false;
+  currStatus = isTapeSensorHigh(backLeftTapeSensorPin, currStatus);
+  return currStatus;
+}
+
+
+void senseTape(void){
+    static unsigned char LEDPosition = 0x00;
+    unsigned char newLEDPosition = 0x00;
+     switch (tapeSensingState) {
+        case TAPE_SENSING_INIT:
+          //handled in interrupt functions
+          __asm__("nop\n\t");
+          break;
+        case FOUND_TAPE:
+          tapeSensingState = START_TURNING_RIGHT;
+          break;
+        case START_TURNING_RIGHT:
+          turnRight();
+          tapeSensingState = TURNING_RIGHT;
+          break;
+        case TURNING_RIGHT:
+         //handled in interrupt
+          break;
+        case DRIVE_STRAIGHT:
+          //Serial.println("driving straight");
+          if(backRightTapeSensorHigh()){
+            newLEDPosition |= 0x01;
+          }
+          if(frontTapeSensorHigh()){
+            newLEDPosition |= 0x02;
+          }
+          if(backLeftTapeSensorHigh()){
+            newLEDPosition |= 0x04;
+          }
+          if(newLEDPosition != LEDPosition){
+            Serial.print("LED Position: ");
+            Serial.println(newLEDPosition,HEX);
+          }
+          LEDPosition = newLEDPosition;
+          
+          switch (newLEDPosition) {
+             case 0x00:
+               stopMtrs();
+               break;
+             case 0x02:
+             case 0x07:
+                //Serial.println("Drving Straight");
+//                runStraight();
+                  RightMtrSpeed(7);
+                  LeftMtrSpeed(7);
+                break;
+                
+             case 0x01:
+             case 0x03:
+               //pulse motors in opposite directions to kill speed
+               backUp();
+               turnRight();
+                 RightMtrSpeed(5);
+                 LeftMtrSpeed(4); 
+               for(int i = 0; i<50;i++){
+                  __asm__("nop\n\t");
+               }
+               
+             break;
+             
+             case 0x04:
+             case 0x06:
+               //pulse motors in opposite directions to kill speed
+               backUp();   
+               RightMtrSpeed(4);
+               LeftMtrSpeed(5);
+               for(int i = 0; i<50;i++){
+                  __asm__("nop\n\t");
+               }
+              Serial.println("breaking");
+             break;
+          }
+          break;
+        default: 
+          stopMtrs();
+          break;
+  }
+};
+
 
 /*---------------- Arduino Main Functions -------------------*/
 void setup() {  // setup() function required for Arduino
@@ -76,30 +219,28 @@ void setup() {  // setup() function required for Arduino
   Serial.println("Starting Bot...");
   RoachInit();
   TMRArd_InitTimer(0, TIME_INTERVAL);
-  attachInterrupt(0, respondToTape2, RISING);
-  attachInterrupt(1, respondToTape3, RISING);
-}
-
-//Respond to seeing tape on Pin 2
-void respondToTape2(void){
-  static int numTimes = 0;
-  
-   Serial.println("Saw Tape Back Left!");
-   Serial.println(numTimes++,DEC);
-}
-
-//Respond to seeing tape on Pin 3
-void respondToTape3(void){
-  static int numTimes = 0;
-  
-   Serial.println("Saw Tape Front!");
-   Serial.println(numTimes++,DEC);
 }
 
 void loop() {  // loop() function required for Arduino
+    
     if (TestForKey()){
       RespToKey();
     }
+    
+   switch (globalState) {
+    case INIT:
+      runStraight();
+      globalState = TAPE_SENSING;
+      break;
+    case TAPE_SENSING:
+      //Serial.println("Sensing tape!");
+      senseTape();
+      break; 
+    default: 
+      stopMtrs();
+  }
+
+    
 }
 
 /*---------------- Module Functions -------------------------*/
@@ -129,88 +270,6 @@ void RespToKey(void) {
   
 }
 
-unsigned char TestForLightOn(void) {
-  char EventOccurred;
-  unsigned int ThisLight;
-  static unsigned int LastLight = 0;
-  
-  ThisLight = LightLevel();
-  EventOccurred = ((ThisLight >= LIGHT_THRESHOLD_HI));
-
-  LastLight = ThisLight;
-  return EventOccurred;
-}
-
-void RespToLightOn(void) {
-  Serial.println("  ON");
-  LeftMtrSpeed(5);
-  RightMtrSpeed(-5);
-}
-
-unsigned char TestForLightOff(void) {
-  char EventOccurred;
-  unsigned int ThisLight;
-  static unsigned int LastLight = 0;
-
-  ThisLight = LightLevel();
-  EventOccurred = ((ThisLight < LIGHT_THRESHOLD_LO));
-  
-  LastLight = ThisLight;
-  return EventOccurred;
-}
-
-void RespToLightOff(void) {
-  Serial.println("  OFF");
-  LeftMtrSpeed(0);
-  RightMtrSpeed(0);
-}
-
-unsigned char TestForBump(void) {
-  static unsigned char LastBumper = 0xF0;
-  unsigned char bumper;
-  unsigned char EventOccurred;
-  
-  bumper = ReadBumpers();
-  EventOccurred = ((bumper != 0xF0) && (bumper != LastBumper));
-  if (EventOccurred) {
-    SET_SHARED_BYTE_TO(bumper);
-    LastBumper = bumper;
-  }
-  return EventOccurred;
-}
-
-void RespToBump(void) {
-    unsigned char bumper;
-
-    bumper = GET_SHARED_BYTE();
-
-    // display which bumper(s) were hit
-    switch (bumper) {
-        case (0xD0):  Serial.println("  Front Right...");
-          backUp();
-          break;
-        case (0xE0):  Serial.println("  Front Left...");
-          backUp();
-          break;
-        case (0x70):  Serial.println("  Back Left..."); 
-        break;
-        case (0xB0):  Serial.println("  Back Right..."); 
-        break;
-        case (0xC0):  Serial.println("  Both Front ..."); 
-          backUp();
-          break;
-        case (0x30):  Serial.println("  Both Back..."); 
-        break;
-        case (0x90):  Serial.println("  Both Right..."); 
-        break;
-        case (0x60):  Serial.println("  Both Left..."); 
-        break;
-
-		// should never get here unless borked
-        default:      Serial.print("  What is this I don�t even->");
-                      Serial.println(bumper,HEX);
-    }
-}
 
 unsigned char TestTimerExpired(unsigned char channelNum) {
   return (unsigned char)TMRArd_IsTimerExpired(channelNum);
@@ -233,21 +292,9 @@ void outputState(char state) {
     Serial.print("State: ");
     Serial.println("INIT");
     break; 
-    case(RUN):
+    case(TAPE_SENSING):
     Serial.print("State: ");
-    Serial.println("RUN");
-    break; 
-    case(STOP):
-    Serial.print("State: ");
-    Serial.println("STOP");
-    break; 
-    case(BACK_UP):
-    Serial.print("State: ");
-    Serial.println("BACK_UP");
-    break; 
-    case(TURN):
-    Serial.print("State: ");
-    Serial.println("TURN");
+    Serial.println("TAPE_SENSING");
     break; 
   }
 }
@@ -268,13 +315,13 @@ void stopMtrs(void){
 }
 
 void turnRight(void){
-  RightMtrSpeed(-MEDIUM);
-  LeftMtrSpeed(MEDIUM); 
+  RightMtrSpeed(-MEDIUM-2);
+  LeftMtrSpeed(MEDIUM+2); 
 }
 
 void turnLeft(void){
-  RightMtrSpeed(-MEDIUM);
-  LeftMtrSpeed(MEDIUM); 
+  RightMtrSpeed(MEDIUM);
+  LeftMtrSpeed(-MEDIUM); 
 }
 
 
