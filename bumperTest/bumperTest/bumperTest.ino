@@ -1,3 +1,5 @@
+#include <Bounce2.h>
+
 int bump1 = 5;
 int bumpRead = 6;
 int val = 0;
@@ -10,6 +12,5 @@ pinMode(bumpRead, OUTPUT);
 
 void loop(){
 val = digitalRead(bump1);
-delay(1000);
 Serial.println(val);
 }
