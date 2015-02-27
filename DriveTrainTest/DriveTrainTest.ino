@@ -15,7 +15,8 @@ void setup() {
 }
 
 void loop() {
-  if (TestForKey()) RespToKey();
+  DriveForward();
+ if (TestForKey()) RespToKey();
 }
 
 // Module Functions////
@@ -52,4 +53,4 @@ void RespToKey(void) {
     case(0x77): DriveForward(); break;
     case(0x73): notMoving(); break;
   }
-}s
+}
