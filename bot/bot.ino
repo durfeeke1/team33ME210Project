@@ -136,6 +136,7 @@ boolean backLeftTapeSensorHigh(void){
 void senseTape(void){
     static unsigned char LEDPosition = 0x00;
     unsigned char newLEDPosition = 0x00;
+    char lastLEDPosition = 0x00;
      switch (tapeSensingState) {
         case TAPE_SENSING_INIT:
           //handled in interrupt functions
@@ -169,24 +170,68 @@ void senseTape(void){
           LEDPosition = newLEDPosition;
           
           switch (newLEDPosition) {
-             case 0x00:
-               stopMtrs();
-               break;
+            case 0x00:
+              if (lastLEDPosition == 0x01)
+              {
+                RightMtrSpeed(4);
+                LeftMtrSpeed(6);
+              }
+              if (lastLEDPosition == 0x07)
+              {
+                RightMtrSpeed(6);
+                LeftMtrSpeed(6);
+              }
+              if (lastLEDPosition == 0x03)
+              {
+                RightMtrSpeed(6);
+                LeftMtrSpeed(4);
+              }
+              if (lastLEDPosition == 0x04)
+              {
+                RightMtrSpeed(6);
+                LeftMtrSpeed(4);
+              }
+              if (lastLEDPosition == 0x06)
+              {
+                RightMtrSpeed(4);
+                LeftMtrSpeed(6);
+              }
+              break;
+//               stopMtrs();
+//               break;
              case 0x02:
              case 0x07:
                 //Serial.println("Drving Straight");
 //                runStraight();
-                  RightMtrSpeed(7);
-                  LeftMtrSpeed(7);
+                  RightMtrSpeed(6);
+                  LeftMtrSpeed(6);
+                  LEDPosition = lastLEDPosition;
                 break;
                 
              case 0x01:
+               if (lastLEDPosition = 0x05 | 0x04)
+               {
+                RightMtrSpeed(6);
+                LeftMtrSpeed(2);
+                break;  
+               }
+                 RightMtrSpeed(4);
+                 LeftMtrSpeed(6);
+                 LEDPosition = lastLEDPosition;
+               break;
              case 0x03:
                //pulse motors in opposite directions to kill speed
+               if (lastLEDPosition = 0x01)
+               {
+                RightMtrSpeed(4);
+                LeftMtrSpeed(6);
+                break;  
+               }
                backUp();
                turnRight();
-                 RightMtrSpeed(5);
+                 RightMtrSpeed(6);
                  LeftMtrSpeed(4); 
+                 LEDPosition = lastLEDPosition;
                for(int i = 0; i<50;i++){
                   __asm__("nop\n\t");
                }
@@ -194,15 +239,31 @@ void senseTape(void){
              break;
              
              case 0x04:
+               if (lastLEDPosition = 0x05 | 0x01)
+               {
+                RightMtrSpeed(2);
+                LeftMtrSpeed(6);
+                break;  
+               }
+                RightMtrSpeed(6);
+                LeftMtrSpeed(4); 
+                LEDPosition = lastLEDPosition;
+                break;
              case 0x06:
+               if (lastLEDPosition = 0x04)
+               {
+                RightMtrSpeed(6);
+                LeftMtrSpeed(4);
+                break;  
+               }
                //pulse motors in opposite directions to kill speed
                backUp();   
                RightMtrSpeed(4);
-               LeftMtrSpeed(5);
+               LeftMtrSpeed(6);
                for(int i = 0; i<50;i++){
                   __asm__("nop\n\t");
                }
-              Serial.println("breaking");
+//              Serial.println("breaking");
              break;
           }
           break;
