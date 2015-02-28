@@ -19,12 +19,8 @@
 #include <Timers.h>
 
 /*---------------- Module Defines ---------------------------*/
-#define LIGHT_THRESHOLD    125
-#define LIGHT_THRESHOLD_HI LIGHT_THRESHOLD + 10
-#define LIGHT_THRESHOLD_LO LIGHT_THRESHOLD - 10
 #define ONE_SEC            1000
 #define TIME_INTERVAL      ONE_SEC
-#define HEARTBEAT_LED      13
 
 #define OFF                0x00
 #define ON                 0x01
@@ -35,8 +31,9 @@
 
 #define BACKUP_TIMER       0
 #define TURN_TIMER         1
+#define SIXTEENTH_SEC      62
 #define EIGTH_SEC          125
-#define QUARTER_SEC          125
+#define QUARTER_SEC        250
 #define HALF_SEC           500
 #define FULL_SEC           1000
 
@@ -47,6 +44,7 @@
 enum globalState {
   INIT,
   TAPE_SENSING,
+  DRIVE_STRAIGHT
 };
 
 
@@ -55,9 +53,8 @@ enum tapeSensingState {
   TAPE_SENSING_INIT,
   FOUND_TAPE,
   BACKING_UP,
-  START_TURNING_RIGHT,
-  DRIVE_STRAIGHT,
-  TURNING_RIGHT
+  START_ROTATING_LEFT,
+  ROTATE_AROUND_RIGHT_WHEEL
 };
 
 /****** DRIVING STRAIGHT STATES ******/
@@ -96,8 +93,7 @@ void senseTape(void);
 boolean isTapeSensorHigh(unsigned int,boolean);
 
 /**********************************/
-int globalState = DRIVE_STRAIGHT;
-int tapeSensingState = DRIVE_STRAIGHT;
+int globalState = TAPE_SENSING;
 
 boolean isTapeSensorHigh(uint8_t tapeSensorPin, boolean prevStatus){
     unsigned int currPinVal = analogRead(tapeSensorPin);
@@ -163,29 +159,78 @@ void veerRight(){
 
 void veerLeft(){
      RightMtrSpeed(6);
-     LeftMtrSpeed(4);
+     LeftMtrSpeed(5);
+}
+
+void goStraight(){
+    RightMtrSpeed(6);
+    LeftMtrSpeed(7);
+}
+
+void rotateToLeft(void){
+  RightMtrSpeed(6);
+  LeftMtrSpeed(-5); 
+}
+
+void turnAroundRightWheel(void){
+  RightMtrSpeed(1);
+  LeftMtrSpeed(-6); 
 }
 
 
 void senseTape(void){
+    static int tapeSensingState = TAPE_SENSING_INIT;
     static unsigned char LEDPosition = 0x00;
     unsigned char newLEDPosition = 0x00;
-    char lastLEDPosition = 0x00;
+    
+    newLEDPosition = getNewLEDPosition();
+    //if we changed our positioning print it out
+    if(newLEDPosition != LEDPosition){
+      Serial.print("LED Position: ");
+      Serial.println(newLEDPosition,HEX);
+    }
+    LEDPosition = newLEDPosition;
+
      switch (tapeSensingState) {
         case TAPE_SENSING_INIT:
-          //handled in interrupt functions
-          __asm__("nop\n\t");
+          goStraight();
+          if(newLEDPosition == 0x02){
+            //pulse to stop
+           
+            stopMtrs();
+            tapeSensingState = FOUND_TAPE;
+             TMRArd_InitTimer(0, HALF_SEC);
+            while(TestTimerExpired(0) != TMRArd_EXPIRED){
+              //  backUp();
+            }
+          }
           break;
         case FOUND_TAPE:
-          tapeSensingState = START_TURNING_RIGHT;
+            if(newLEDPosition != 0x05){
+               backUp();
+            }else{
+              stopMtrs();
+              tapeSensingState = START_ROTATING_LEFT;
+            }
           break;
-        case START_TURNING_RIGHT:
-          turnRight();
-          tapeSensingState = TURNING_RIGHT;
+        case START_ROTATING_LEFT:
+            //test for just the front led
+            //bitwise and with the second bit position. if this bit is high it evaluate to true, otherwise it is false
+            if(newLEDPosition == 0x04){
+                stopMtrs();
+                tapeSensingState = ROTATE_AROUND_RIGHT_WHEEL;
+            }else{
+              rotateToLeft();
+            }
           break;
-        case TURNING_RIGHT:
-         //handled in interrupt
-          break;
+        case ROTATE_AROUND_RIGHT_WHEEL:
+            if(newLEDPosition == 0x02 || newLEDPosition == 0x04 || newLEDPosition == 0x01){
+                stopMtrs();
+                globalState = DRIVE_STRAIGHT;
+            }else{
+              turnAroundRightWheel();
+            }
+        break;
      }
 };
 
@@ -195,8 +240,7 @@ unsigned int handleGoingStraight(unsigned char newLEDPosition){
         break;
        case 0x02:
        case 0x07:
-            RightMtrSpeed(6);
-            LeftMtrSpeed(6);
+            goStraight();
             return GOING_STRAIGHT;
           break;
        case 0x01:
@@ -245,8 +289,7 @@ unsigned int handleBackAfterCorrectingDL(unsigned char newLEDPosition){
             break;
        case 0x02:
        case 0x07:
-            RightMtrSpeed(6);
-            LeftMtrSpeed(6);
+            goStraight();
             return GOING_STRAIGHT;
             break;
        case 0x01:
@@ -295,8 +338,7 @@ unsigned int handleBackAfterCorrectingDR(unsigned char newLEDPosition){
         break;
        case 0x02:
        case 0x07:
-          RightMtrSpeed(6);
-          LeftMtrSpeed(6);
+          goStraight();
           return GOING_STRAIGHT;
           break;
        case 0x01:
@@ -317,7 +359,7 @@ unsigned int handleBackAfterCorrectingDR(unsigned char newLEDPosition){
 
 void driveStraightOnTape(){
     static unsigned int driveStraightState = DRIVING_STRAIGHT_INIT;
-    static unsigned int lastDriveStraightState = -1;
+    unsigned int newDriveStraightState = 0;
     static unsigned char LEDPosition = 0x00;
     unsigned char newLEDPosition = 0x00;
     
@@ -333,44 +375,44 @@ void driveStraightOnTape(){
     switch (driveStraightState)
     {
       case DRIVING_STRAIGHT_INIT:
-        driveStraightState = GOING_STRAIGHT;
-        if(lastDriveStraightState != driveStraightState){
+        newDriveStraightState = GOING_STRAIGHT;
+        //if(newDriveStraightState != driveStraightState){
           Serial.println("Init!");
-        }
+        //}
         break;
       case GOING_STRAIGHT:
-        driveStraightState = handleGoingStraight(newLEDPosition);
-        if(lastDriveStraightState != driveStraightState){
+        newDriveStraightState = handleGoingStraight(newLEDPosition);
+        //if(newDriveStraightState != driveStraightState){
           Serial.println("Going Straight");
-        }
+        //}
         break;
       case CORRECTING_DRIFT_RIGHT:
-        if(lastDriveStraightState != driveStraightState){
+        newDriveStraightState = handleCorrectingDriftRight(newLEDPosition);
+        //if(newDriveStraightState != driveStraightState){
           Serial.println("correcting drift right");
-        }
-        driveStraightState = handleCorrectingDriftRight(newLEDPosition);
+        //}
         break;
       case BACK_AFTER_CORRECTING_DR:
-        if(lastDriveStraightState != driveStraightState){
+        newDriveStraightState = handleBackAfterCorrectingDR(newLEDPosition);
+       // if(newDriveStraightState != driveStraightState){
           Serial.println("back after correcting drift right");
-        }
-        driveStraightState = handleBackAfterCorrectingDR(newLEDPosition);
+        //}
         break;
       case CORRECTING_DRIFT_LEFT:
-        if(lastDriveStraightState != driveStraightState){
+        newDriveStraightState = handleCorrectingDriftLeft(newLEDPosition);
+        //if(newDriveStraightState != driveStraightState){
           Serial.println("correcting drift left");
-        }
-        driveStraightState = handleCorrectingDriftLeft(newLEDPosition);
+        //}
         break;
       case BACK_AFTER_CORRECTING_DL:
-        if(lastDriveStraightState != driveStraightState){
+        newDriveStraightState = handleBackAfterCorrectingDL(newLEDPosition);
+        //if(newDriveStraightState != driveStraightState){
           Serial.println("back after correcting drift left");
-        }
-        driveStraightState = handleBackAfterCorrectingDL(newLEDPosition);
+        //}
        break;
     }
     
-    lastDriveStraightState = driveStraightState;
+    driveStraightState = newDriveStraightState;
 }
 
 /*---------------- Arduino Main Functions -------------------*/
@@ -470,6 +512,11 @@ void runStraight(void){
 void backUp(void){
   RightMtrSpeed(-MEDIUM);
   LeftMtrSpeed(-MEDIUM); 
+}
+
+void backUpHard(void){
+  RightMtrSpeed(-FAST);
+  LeftMtrSpeed(-FAST); 
 }
 
 void stopMtrs(void){
