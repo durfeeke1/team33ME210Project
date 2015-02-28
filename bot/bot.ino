@@ -186,55 +186,10 @@ void senseTape(void){
         case TURNING_RIGHT:
          //handled in interrupt
           break;
-        case DRIVE_STRAIGHT:
-          //get new LED Position
-          newLEDPosition = getNewLEDPosition();
-          //if we changed our positioning print it out
-          if(newLEDPosition != LEDPosition){
-            Serial.print("LED Position: ");
-            Serial.println(newLEDPosition,HEX);
-            Serial.print("Last LED Position: ");
-            Serial.println(lastLEDPosition,HEX);
-          }
-          
-          LEDPosition = newLEDPosition;
-          
-          switch (newLEDPosition) {
-            case 0x00:
-              break;
-             case 0x02:
-             case 0x07:
-                  RightMtrSpeed(6);
-                  LeftMtrSpeed(6);
-                break;
-                
-             case 0x01:
-                veerRight();
-               break;
-             case 0x03:
-               //pulse motors in opposite directions to kill speed
-               backUp();
-               //turnRight();
-               veerLeft();
-             break;
-             
-             case 0x04:
-                veerLeft();
-                break;
-             case 0x06:
-               //pulse motors in opposite directions to kill speed
-               backUp();   
-               veerRight();
-             break;
-          }
-          break;
-        default: 
-          stopMtrs();
-          break;
-  }
+     }
 };
 
-void handleGoingStraight(unsigned char newLEDPosition){
+unsigned int handleGoingStraight(unsigned char newLEDPosition){
     switch (newLEDPosition) {
       case 0x00:
         break;
@@ -242,146 +197,127 @@ void handleGoingStraight(unsigned char newLEDPosition){
        case 0x07:
             RightMtrSpeed(6);
             LeftMtrSpeed(6);
+            return GOING_STRAIGHT;
           break;
        case 0x01:
           veerRight();
+          return CORRECTING_DRIFT_LEFT;
+         break;
+       case 0x03:
+       break;
+       case 0x04:
+          veerLeft();
+          return CORRECTING_DRIFT_RIGHT;
+          break;
+       case 0x06:
+       break;
+    }
+}
+
+unsigned int handleCorrectingDriftLeft(unsigned char newLEDPosition){
+    switch (newLEDPosition) {
+      case 0x00:
+          break;
+       case 0x02:
+       case 0x07:
+          break;
+       case 0x01:
+          veerRight();
+          return CORRECTING_DRIFT_LEFT;
          break;
        case 0x03:
          //pulse motors in opposite directions to kill speed
          backUp();
          //turnRight();
          veerLeft();
-       break;
+         return BACK_AFTER_CORRECTING_DL;
+         break;
        case 0x04:
-          veerLeft();
-          break;
+         break;
        case 0x06:
-         //pulse motors in opposite directions to kill speed
-         backUp();   
-         veerRight();
-       break;
+         break;
     }
 }
 
-void handleCorrectingDriftRight(unsigned char newLEDPosition){
+unsigned int handleBackAfterCorrectingDL(unsigned char newLEDPosition){
+    switch (newLEDPosition) {
+      case 0x00:
+            break;
+       case 0x02:
+       case 0x07:
+            RightMtrSpeed(6);
+            LeftMtrSpeed(6);
+            return GOING_STRAIGHT;
+            break;
+       case 0x01:
+          break;
+       case 0x03:
+         //pulse motors in opposite directions to kill speed
+         backUp();
+         //turnRight();
+         veerLeft();
+         return BACK_AFTER_CORRECTING_DL;
+         break;
+       case 0x04:
+          break;
+       case 0x06:
+          break;
+    }
+}
+
+unsigned int handleCorrectingDriftRight(unsigned char newLEDPosition){
     switch (newLEDPosition) {
       case 0x00:
         break;
        case 0x02:
        case 0x07:
-            RightMtrSpeed(6);
-            LeftMtrSpeed(6);
           break;
        case 0x01:
-          veerRight();
          break;
        case 0x03:
-         //pulse motors in opposite directions to kill speed
-         backUp();
-         //turnRight();
-         veerLeft();
        break;
        case 0x04:
           veerLeft();
+          return CORRECTING_DRIFT_RIGHT;
           break;
        case 0x06:
          //pulse motors in opposite directions to kill speed
          backUp();   
          veerRight();
+         return BACK_AFTER_CORRECTING_DR;
        break;
     }
 }
 
-void handleBackAfterCorrectingDR(unsigned char newLEDPosition){
+unsigned int handleBackAfterCorrectingDR(unsigned char newLEDPosition){
     switch (newLEDPosition) {
       case 0x00:
         break;
        case 0x02:
        case 0x07:
-            RightMtrSpeed(6);
-            LeftMtrSpeed(6);
+          RightMtrSpeed(6);
+          LeftMtrSpeed(6);
+          return GOING_STRAIGHT;
           break;
        case 0x01:
-          veerRight();
          break;
        case 0x03:
-         //pulse motors in opposite directions to kill speed
-         backUp();
-         //turnRight();
-         veerLeft();
-       break;
+         break;
        case 0x04:
-          veerLeft();
-          break;
+         break;
        case 0x06:
          //pulse motors in opposite directions to kill speed
          backUp();   
          veerRight();
-       break;
-    }
-}
-
-void handleCorrectingDriftLeft(unsigned char newLEDPosition){
-    switch (newLEDPosition) {
-      case 0x00:
-        break;
-       case 0x02:
-       case 0x07:
-            RightMtrSpeed(6);
-            LeftMtrSpeed(6);
-          break;
-       case 0x01:
-          veerRight();
-         break;
-       case 0x03:
-         //pulse motors in opposite directions to kill speed
-         backUp();
-         //turnRight();
-         veerLeft();
-       break;
-       case 0x04:
-          veerLeft();
-          break;
-       case 0x06:
-         //pulse motors in opposite directions to kill speed
-         backUp();   
-         veerRight();
-       break;
-    }
-}
-
-void handleBackAfterCorrectingDL(unsigned char newLEDPosition){
-    switch (newLEDPosition) {
-      case 0x00:
-        break;
-       case 0x02:
-       case 0x07:
-            RightMtrSpeed(6);
-            LeftMtrSpeed(6);
-          break;
-       case 0x01:
-          veerRight();
-         break;
-       case 0x03:
-         //pulse motors in opposite directions to kill speed
-         backUp();
-         //turnRight();
-         veerLeft();
-       break;
-       case 0x04:
-          veerLeft();
-          break;
-       case 0x06:
-         //pulse motors in opposite directions to kill speed
-         backUp();   
-         veerRight();
+         return BACK_AFTER_CORRECTING_DR;
        break;
     }
 }
 
 
-void driveStraight(){
+void driveStraightOnTape(){
     static unsigned int driveStraightState = DRIVING_STRAIGHT_INIT;
+    static unsigned int lastDriveStraightState = -1;
     static unsigned char LEDPosition = 0x00;
     unsigned char newLEDPosition = 0x00;
     
@@ -391,29 +327,50 @@ void driveStraight(){
       Serial.print("LED Position: ");
       Serial.println(newLEDPosition,HEX);
     }
+
     LEDPosition = newLEDPosition;
     
     switch (driveStraightState)
     {
       case DRIVING_STRAIGHT_INIT:
         driveStraightState = GOING_STRAIGHT;
-      break;
+        if(lastDriveStraightState != driveStraightState){
+          Serial.println("Init!");
+        }
+        break;
       case GOING_STRAIGHT:
-          handleGoingStraight(newLEDPosition);
-      break;
+        driveStraightState = handleGoingStraight(newLEDPosition);
+        if(lastDriveStraightState != driveStraightState){
+          Serial.println("Going Straight");
+        }
+        break;
       case CORRECTING_DRIFT_RIGHT:
-          handleCorrectingDriftRight(newLEDPosition);
-      break;
+        if(lastDriveStraightState != driveStraightState){
+          Serial.println("correcting drift right");
+        }
+        driveStraightState = handleCorrectingDriftRight(newLEDPosition);
+        break;
       case BACK_AFTER_CORRECTING_DR:
-          handleBackAfterCorrectingDR(newLEDPosition);
-      break;
+        if(lastDriveStraightState != driveStraightState){
+          Serial.println("back after correcting drift right");
+        }
+        driveStraightState = handleBackAfterCorrectingDR(newLEDPosition);
+        break;
       case CORRECTING_DRIFT_LEFT:
-          handleCorrectingDriftLeft(newLEDPosition);
-      break;
+        if(lastDriveStraightState != driveStraightState){
+          Serial.println("correcting drift left");
+        }
+        driveStraightState = handleCorrectingDriftLeft(newLEDPosition);
+        break;
       case BACK_AFTER_CORRECTING_DL:
-          handleBackAfterCorrectingDL(newLEDPosition);
-      break;
+        if(lastDriveStraightState != driveStraightState){
+          Serial.println("back after correcting drift left");
+        }
+        driveStraightState = handleBackAfterCorrectingDL(newLEDPosition);
+       break;
     }
+    
+    lastDriveStraightState = driveStraightState;
 }
 
 /*---------------- Arduino Main Functions -------------------*/
@@ -440,7 +397,7 @@ void loop() {  // loop() function required for Arduino
       senseTape();
       break;
     case DRIVE_STRAIGHT:
-      driveStraight();
+      driveStraightOnTape();
       break;
     default: 
       stopMtrs();
