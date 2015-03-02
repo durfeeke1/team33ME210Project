@@ -43,6 +43,7 @@
 /*------------------ STATES ----------------------------------*/
 enum globalState {
   INIT,
+  GET_BALLS,
   TAPE_SENSING,
   DRIVE_STRAIGHT
 };
@@ -67,9 +68,18 @@ enum drivingStraightState {
   BACK_AFTER_CORRECTING_DL
 };
 
-#define frontTapeSensorPin A2
-#define backRightTapeSensorPin A1
+/****** GETTING BALLS STATES ******/
+enum getBallsState {
+  GET_BALLS_INIT,
+  FIRST_BALL,
+  SECOND_BALL,
+  THIRD_BALL
+};
+
+#define frontTapeSensorPin A1
+#define backRightTapeSensorPin A2
 #define backLeftTapeSensorPin A0
+#define backBumperPin 4
 
 
 /*---------------- Module Function Prototypes ---------------*/
@@ -93,26 +103,26 @@ void senseTape(void);
 boolean isTapeSensorHigh(unsigned int,boolean);
 
 /**********************************/
-int globalState = TAPE_SENSING;
+int globalState = GET_BALLS;
 
 boolean isTapeSensorHigh(uint8_t tapeSensorPin, boolean prevStatus){
     unsigned int currPinVal = analogRead(tapeSensorPin);
     
-    if(tapeSensorPin == backLeftTapeSensorPin){
+    //if(tapeSensorPin == frontTapeSensorPin){
       //Serial.print("pinval: ");
       //Serial.println(currPinVal,DEC );
-    }
+    //}
     
     //if last value was high
     if(prevStatus == true){
       //if analog value is greater than 2 volts
-      if(currPinVal > 275){
+      if(currPinVal > 300){
           return true;
       }else{
           return false; 
       }
     }else{
-      if(currPinVal > 300){
+      if(currPinVal > 325){
           return true;
       }else{
           return false; 
@@ -377,42 +387,80 @@ void driveStraightOnTape(){
       case DRIVING_STRAIGHT_INIT:
         newDriveStraightState = GOING_STRAIGHT;
         //if(newDriveStraightState != driveStraightState){
-          Serial.println("Init!");
+          //Serial.println("Driving Straight Init!");
         //}
         break;
       case GOING_STRAIGHT:
         newDriveStraightState = handleGoingStraight(newLEDPosition);
         //if(newDriveStraightState != driveStraightState){
-          Serial.println("Going Straight");
+          //Serial.println("Going Straight");
         //}
         break;
       case CORRECTING_DRIFT_RIGHT:
         newDriveStraightState = handleCorrectingDriftRight(newLEDPosition);
         //if(newDriveStraightState != driveStraightState){
-          Serial.println("correcting drift right");
+          //Serial.println("correcting drift right");
         //}
         break;
       case BACK_AFTER_CORRECTING_DR:
         newDriveStraightState = handleBackAfterCorrectingDR(newLEDPosition);
        // if(newDriveStraightState != driveStraightState){
-          Serial.println("back after correcting drift right");
+          //Serial.println("back after correcting drift right");
         //}
         break;
       case CORRECTING_DRIFT_LEFT:
         newDriveStraightState = handleCorrectingDriftLeft(newLEDPosition);
         //if(newDriveStraightState != driveStraightState){
-          Serial.println("correcting drift left");
+          //Serial.println("correcting drift left");
         //}
         break;
       case BACK_AFTER_CORRECTING_DL:
         newDriveStraightState = handleBackAfterCorrectingDL(newLEDPosition);
         //if(newDriveStraightState != driveStraightState){
-          Serial.println("back after correcting drift left");
+          //Serial.println("back after correcting drift left");
         //}
        break;
     }
     
     driveStraightState = newDriveStraightState;
+}
+
+boolean backBumperHit(){
+  if(HIGH == digitalRead(4)){
+    //Serial.println("back bumper touching");
+    return true;
+  }else{
+    //Serial.println("back bumper not touching");
+    return false;
+  }
+}
+
+void getBalls(){
+     static int getBallsState = GET_BALLS_INIT;
+     
+     switch (getBallsState)
+    {
+      case GET_BALLS_INIT:
+          Serial.println("Backing up!");
+          backUp();
+          getBallsState = FIRST_BALL;
+        break;
+      case FIRST_BALL:
+        if(backBumperHit()){
+           Serial.println("motors stopped");
+           stopMtrs();
+           getBallsState = SECOND_BALL;
+        }else{
+          Serial.println("Backing up!");
+        }
+        break;
+      case SECOND_BALL:
+
+        break;
+      case THIRD_BALL:
+
+        break;
+    }
 }
 
 /*---------------- Arduino Main Functions -------------------*/
@@ -433,6 +481,9 @@ void loop() {  // loop() function required for Arduino
     case INIT:
       runStraight();
       globalState = TAPE_SENSING;
+      break;
+    case GET_BALLS:
+      getBalls();
       break;
     case TAPE_SENSING:
       //Serial.println("Sensing tape!");
