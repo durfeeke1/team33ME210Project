@@ -36,6 +36,7 @@
 #define QUARTER_SEC        250
 #define HALF_SEC           500
 #define FULL_SEC           1000
+#define THREE_SEC          3000
 
 #define FRONT              0x00
 #define BACK               0x01
@@ -209,10 +210,6 @@ void senseTape(void){
            
             stopMtrs();
             tapeSensingState = FOUND_TAPE;
-             TMRArd_InitTimer(0, HALF_SEC);
-            while(TestTimerExpired(0) != TMRArd_EXPIRED){
-              //  backUp();
-            }
           }
           break;
         case FOUND_TAPE:
@@ -448,17 +445,61 @@ void getBalls(){
       case FIRST_BALL:
         if(backBumperHit()){
            Serial.println("motors stopped");
+           //go straight for a short period of time
+           goStraight();
+           TMRArd_InitTimer(0, QUARTER_SEC);
+            while(TestTimerExpired(0) != TMRArd_EXPIRED){
+              
+            }
+           //wait 3 seconds
            stopMtrs();
+           TMRArd_InitTimer(0, THREE_SEC);
+            while(TestTimerExpired(0) != TMRArd_EXPIRED){
+              
+            }
+            
+            backUp();
            getBallsState = SECOND_BALL;
         }else{
-          Serial.println("Backing up!");
+          //Serial.println("Backing up!");
         }
         break;
       case SECOND_BALL:
-
+        if(backBumperHit()){
+           Serial.println("motors stopped");
+           //go straight for a short period of time
+           goStraight();
+           TMRArd_InitTimer(0, QUARTER_SEC);
+            while(TestTimerExpired(0) != TMRArd_EXPIRED){
+              
+            }
+           //wait 3 seconds
+           stopMtrs();
+           TMRArd_InitTimer(0, THREE_SEC);
+            while(TestTimerExpired(0) != TMRArd_EXPIRED){
+              
+            }
+            
+            backUp();
+           getBallsState = THIRD_BALL;
+        }else{
+          //Serial.println("Backing up!");
+        }
         break;
+          break;
       case THIRD_BALL:
-
+        if(backBumperHit()){
+           //go straight for a short period of time
+           goStraight();
+           TMRArd_InitTimer(0, QUARTER_SEC);
+            while(TestTimerExpired(0) != TMRArd_EXPIRED){
+              
+            }
+            stopMtrs();
+          
+        }else{
+          //Serial.println("Backing up!");
+        }
         break;
     }
 }
@@ -561,8 +602,8 @@ void runStraight(void){
 }
 
 void backUp(void){
-  RightMtrSpeed(-MEDIUM);
-  LeftMtrSpeed(-MEDIUM); 
+  RightMtrSpeed(-5);
+  LeftMtrSpeed(-5); 
 }
 
 void backUpHard(void){
