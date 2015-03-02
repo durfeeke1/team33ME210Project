@@ -36,6 +36,7 @@
 #define QUARTER_SEC        250
 #define HALF_SEC           500
 #define FULL_SEC           1000
+#define NINETY_DEG         975
 #define THREE_SEC          3000
 
 #define FRONT              0x00
@@ -74,7 +75,10 @@ enum getBallsState {
   GET_BALLS_INIT,
   FIRST_BALL,
   SECOND_BALL,
-  THIRD_BALL
+  THIRD_BALL,
+  TURN_90_DEGREES_LEFT,
+  DONE_WITH_GETTING_BALLS,
+  BACK_UP_TO_WALL
 };
 
 #define frontTapeSensorPin A1
@@ -186,6 +190,21 @@ void rotateToLeft(void){
 void turnAroundRightWheel(void){
   RightMtrSpeed(1);
   LeftMtrSpeed(-6); 
+}
+
+void turn90DegreesLeft(void){
+  TMRArd_InitTimer(0, NINETY_DEG);
+  RightMtrSpeed(8);
+  LeftMtrSpeed(-6); 
+  while(TestTimerExpired(0) != TMRArd_EXPIRED){
+  
+  }
+  stopMtrs();
+  TMRArd_InitTimer(0, QUARTER_SEC);
+  while(TestTimerExpired(0) != TMRArd_EXPIRED){
+  
+  }
+ 
 }
 
 
@@ -491,16 +510,39 @@ void getBalls(){
         if(backBumperHit()){
            //go straight for a short period of time
            goStraight();
-           TMRArd_InitTimer(0, QUARTER_SEC);
+           TMRArd_InitTimer(0, HALF_SEC);
             while(TestTimerExpired(0) != TMRArd_EXPIRED){
               
             }
             stopMtrs();
-          
+            getBallsState = TURN_90_DEGREES_LEFT;
         }else{
           //Serial.println("Backing up!");
         }
         break;
+       case TURN_90_DEGREES_LEFT:
+          turn90DegreesLeft();
+          backUp();
+          getBallsState = BACK_UP_TO_WALL;
+          break;
+       case BACK_UP_TO_WALL:
+          if(backBumperHit()){
+             //go straight for a short period of time
+             goStraight();
+             TMRArd_InitTimer(0, QUARTER_SEC);
+              while(TestTimerExpired(0) != TMRArd_EXPIRED){
+                
+              }
+              stopMtrs();
+              getBallsState = DONE_WITH_GETTING_BALLS;
+          }else{
+            //Serial.println("Backing up!");
+          }
+          break;
+       case DONE_WITH_GETTING_BALLS:
+       //place holder
+         globalState = TAPE_SENSING;
+         break;
     }
 }
 
@@ -602,7 +644,7 @@ void runStraight(void){
 }
 
 void backUp(void){
-  RightMtrSpeed(-5);
+  RightMtrSpeed(-6);
   LeftMtrSpeed(-5); 
 }
 
