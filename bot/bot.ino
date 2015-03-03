@@ -270,8 +270,8 @@ void turnAroundRightWheel(void){
 
 void turn90DegreesLeft(void){
   TMRArd_InitTimer(0, NINETY_DEG);
-  RightMtrSpeed(-80);
-  LeftMtrSpeed(80); 
+  RightMtrSpeed(-70);
+  LeftMtrSpeed(70); 
   while(TestTimerExpired(0) != TMRArd_EXPIRED){
   
   }
@@ -322,6 +322,35 @@ void pulseLeft(){
   }
   rotateToLeft();
   TMRArd_InitTimer(0, EIGTH_SEC);
+  while(TestTimerExpired(0) != TMRArd_EXPIRED){
+  
+  }
+  stopMtrs();
+}
+
+void pulseLeftShort(){
+  stopMtrs();
+  TMRArd_InitTimer(0, SIXTEENTH_SEC);
+  while(TestTimerExpired(0) != TMRArd_EXPIRED){
+  
+  }
+  rotateToLeft();
+  TMRArd_InitTimer(0, SIXTEENTH_SEC);
+  while(TestTimerExpired(0) != TMRArd_EXPIRED){
+  
+  }
+  stopMtrs();
+}
+
+
+void pulseRightShort(){
+  stopMtrs();
+  TMRArd_InitTimer(0, SIXTEENTH_SEC);
+  while(TestTimerExpired(0) != TMRArd_EXPIRED){
+  
+  }
+  rotateToRight();
+  TMRArd_InitTimer(0, SIXTEENTH_SEC);
   while(TestTimerExpired(0) != TMRArd_EXPIRED){
   
   }
@@ -425,6 +454,7 @@ unsigned int handleGoingStraight(unsigned char newLEDPosition){
             return GOING_STRAIGHT;
        break;
        case 0x04:
+          pulseLeftShort();
           veerLeft();
           return CORRECTING_DRIFT_RIGHT;
           break;
@@ -551,9 +581,9 @@ void driveStraightOnTape(){
 
     LEDPosition = newLEDPosition;
     
-    //if(frontBumperHit()){
-      //driveStraightState = AT_END_OF_COURT;
-    //}
+    if(frontBumperHit()){
+      driveStraightState = AT_END_OF_COURT;
+    }
     
     switch (driveStraightState)
     {
@@ -659,11 +689,14 @@ void getBalls(){
         if(backBumperHit()){
            //go straight for a short period of time
            goStraightGetBalls();
-           TMRArd_InitTimer(0, HALF_SEC);
+           TMRArd_InitTimer(0, HALF_SEC+QUARTER_SEC);
             while(TestTimerExpired(0) != TMRArd_EXPIRED){
               
             }
             stopMtrs();
+           TMRArd_InitTimer(0, THREE_SEC);
+            while(TestTimerExpired(0) != TMRArd_EXPIRED){ 
+            }
             getBallsState = TURN_90_DEGREES_LEFT;
         }else{
           //Serial.println("Backing up!");
