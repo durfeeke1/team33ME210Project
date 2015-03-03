@@ -15,7 +15,7 @@
 **************************************************************/
 
 /*---------------- Includes ---------------------------------*/
-#include <Roachlib.h>
+#include "Motorlib.h"
 #include <Timers.h>
 
 /*---------------- Module Defines ---------------------------*/
@@ -35,8 +35,9 @@
 #define EIGTH_SEC          125
 #define QUARTER_SEC        250
 #define HALF_SEC           500
+#define THREE_QUARTER_SEC  750
 #define FULL_SEC           1000
-#define NINETY_DEG         975
+#define NINETY_DEG         825
 #define THREE_SEC          3000
 
 #define FRONT              0x00
@@ -83,7 +84,7 @@ enum getBallsState {
   BACK_UP_TO_WALL
 };
 /******************** initialize global state machine *********/
-int globalState = TAPE_SENSING;
+int globalState = GET_BALLS;
 
 #define frontTapeSensorPin A0
 #define backRightTapeSensorPin A2
@@ -177,8 +178,8 @@ void runStraight(void){
 }
 
 void backUp(void){
-  RightMtrSpeed(-70);
-  LeftMtrSpeed(-65); 
+  RightMtrSpeed(-64);
+  LeftMtrSpeed(-61); 
 }
 
 void backUpHard(void){
@@ -212,15 +213,20 @@ void veerLeft(){
 }
 
 void goStraight(){
-    RightMtrSpeed(41);
+    RightMtrSpeed(40);
     LeftMtrSpeed(40);
+}
+
+void goStraightGetBalls(){
+    RightMtrSpeed(55);
+    LeftMtrSpeed(55);
 }
 
 //to make sure we can get out of stall
 void kickOff(){
-    RightMtrSpeed(70);
-    LeftMtrSpeed(70);
-  TMRArd_InitTimer(0, HALF_SEC);
+    RightMtrSpeed(71);
+    LeftMtrSpeed(66);
+  TMRArd_InitTimer(0, QUARTER_SEC);
   while(TestTimerExpired(0) != TMRArd_EXPIRED){
   
   }
@@ -236,10 +242,10 @@ void turnAroundRightWheel(void){
   LeftMtrSpeed(-60); 
 }
 
-void turn90DegreesRight(void){
+void turn90DegreesLeft(void){
   TMRArd_InitTimer(0, NINETY_DEG);
-  RightMtrSpeed(-60);
-  LeftMtrSpeed(70); 
+  RightMtrSpeed(-80);
+  LeftMtrSpeed(80); 
   while(TestTimerExpired(0) != TMRArd_EXPIRED){
   
   }
@@ -253,12 +259,13 @@ void turn90DegreesRight(void){
 
 void pulseBack(void){
   stopMtrs();
-  TMRArd_InitTimer(0, SIXTEENTH_SEC);
+  TMRArd_InitTimer(0, EIGTH_SEC);
   while(TestTimerExpired(0) != TMRArd_EXPIRED){
   
   }
-  backUp();
-  TMRArd_InitTimer(0, SIXTEENTH_SEC);
+  RightMtrSpeed(-58);
+  LeftMtrSpeed(-55);
+  TMRArd_InitTimer(0, EIGTH_SEC);
   while(TestTimerExpired(0) != TMRArd_EXPIRED){
   
   }
@@ -267,13 +274,13 @@ void pulseBack(void){
 
 void pulseStraight(){
   stopMtrs();
-  TMRArd_InitTimer(0, SIXTEENTH_SEC);
+  TMRArd_InitTimer(0, EIGTH_SEC);
   while(TestTimerExpired(0) != TMRArd_EXPIRED){
   
   }
-  RightMtrSpeed(55);
-  LeftMtrSpeed(55);
-  TMRArd_InitTimer(0, SIXTEENTH_SEC);
+  RightMtrSpeed(65);
+  LeftMtrSpeed(65);
+  TMRArd_InitTimer(0, EIGTH_SEC);
   while(TestTimerExpired(0) != TMRArd_EXPIRED){
   
   }
@@ -314,7 +321,7 @@ void senseTape(void){
           tapeSensingState = KICK_OFF;
           break;
         case KICK_OFF:
-          goStraight();
+          pulseStraight();
           if(newLEDPosition == 0x02){
             //pulse to stop
             pulseBack();
@@ -347,7 +354,7 @@ void senseTape(void){
             }
         break;
         case ALIGNED:
-          //globalState = DRIVE_STRAIGHT;
+          globalState = DRIVE_STRAIGHT;
         break;
      }
 };
@@ -558,7 +565,7 @@ void getBalls(){
            Serial.println("motors stopped");
            //go straight for a short period of time
            goStraight();
-           TMRArd_InitTimer(0, QUARTER_SEC);
+           TMRArd_InitTimer(0, HALF_SEC);
             while(TestTimerExpired(0) != TMRArd_EXPIRED){
               
             }
@@ -579,8 +586,8 @@ void getBalls(){
         if(backBumperHit()){
            Serial.println("motors stopped");
            //go straight for a short period of time
-           goStraight();
-           TMRArd_InitTimer(0, QUARTER_SEC);
+           goStraightGetBalls();
+           TMRArd_InitTimer(0, HALF_SEC);
             while(TestTimerExpired(0) != TMRArd_EXPIRED){
               
             }
@@ -601,7 +608,7 @@ void getBalls(){
       case THIRD_BALL:
         if(backBumperHit()){
            //go straight for a short period of time
-           goStraight();
+           goStraightGetBalls();
            TMRArd_InitTimer(0, HALF_SEC);
             while(TestTimerExpired(0) != TMRArd_EXPIRED){
               
@@ -613,22 +620,23 @@ void getBalls(){
         }
         break;
        case TURN_90_DEGREES_LEFT:
-          turn90DegreesRight();
-          backUp();
+          turn90DegreesLeft();
+          //backUp();
           getBallsState = BACK_UP_TO_WALL;
           break;
        case BACK_UP_TO_WALL:
           if(backBumperHit()){
              //go straight for a short period of time
-             goStraight();
-             TMRArd_InitTimer(0, QUARTER_SEC);
+             pulseBack();
+             TMRArd_InitTimer(0, HALF_SEC);
               while(TestTimerExpired(0) != TMRArd_EXPIRED){
-                
+                pulseBack();
               }
-              stopMtrs();
+              pulseBack();
               getBallsState = DONE_WITH_GETTING_BALLS;
           }else{
             //Serial.println("Backing up!");
+            backUp();
           }
           break;
        case DONE_WITH_GETTING_BALLS:
@@ -642,7 +650,7 @@ void getBalls(){
 void setup() {  // setup() function required for Arduino
   Serial.begin(9600);
   Serial.println("Starting Bot...");
-  RoachInit();
+  MotorInit();
   TMRArd_InitTimer(0, TIME_INTERVAL);
 }
 
