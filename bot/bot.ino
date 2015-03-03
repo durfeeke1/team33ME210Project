@@ -37,7 +37,7 @@
 #define HALF_SEC           500
 #define THREE_QUARTER_SEC  750
 #define FULL_SEC           1000
-#define NINETY_DEG         825
+#define NINETY_DEG         700
 #define THREE_SEC          3000
 
 #define FRONT              0x00
@@ -70,7 +70,8 @@ enum drivingStraightState {
   CORRECTING_DRIFT_RIGHT,
   BACK_AFTER_CORRECTING_DR,
   CORRECTING_DRIFT_LEFT,
-  BACK_AFTER_CORRECTING_DL
+  BACK_AFTER_CORRECTING_DL,
+  AT_END_OF_COURT
 };
 
 /****** GETTING BALLS STATES ******/
@@ -172,14 +173,34 @@ unsigned char getNewLEDPosition(void){
     return newLEDPosition;
 }
 
+boolean backBumperHit(){
+  if(HIGH == digitalRead(4)){
+    //Serial.println("back bumper touching");
+    return true;
+  }else{
+    //Serial.println("back bumper not touching");
+    return false;
+  }
+}
+
+boolean frontBumperHit(){
+  if(HIGH == digitalRead(2)){
+    //Serial.println("back bumper touching");
+    return true;
+  }else{
+    //Serial.println("back bumper not touching");
+    return false;
+  }
+}
+
 void runStraight(void){
   RightMtrSpeed(MEDIUM);
   LeftMtrSpeed(MEDIUM); 
 }
 
 void backUp(void){
-  RightMtrSpeed(-64);
-  LeftMtrSpeed(-61); 
+  RightMtrSpeed(-58);
+  LeftMtrSpeed(-50); 
 }
 
 void backUpHard(void){
@@ -224,9 +245,9 @@ void goStraightGetBalls(){
 
 //to make sure we can get out of stall
 void kickOff(){
-    RightMtrSpeed(71);
-    LeftMtrSpeed(66);
-  TMRArd_InitTimer(0, QUARTER_SEC);
+   RightMtrSpeed(60);
+   LeftMtrSpeed(56);
+  TMRArd_InitTimer(0, HALF_SEC);
   while(TestTimerExpired(0) != TMRArd_EXPIRED){
   
   }
@@ -249,6 +270,7 @@ void turn90DegreesLeft(void){
   while(TestTimerExpired(0) != TMRArd_EXPIRED){
   
   }
+  pulseBack();
   stopMtrs();
   TMRArd_InitTimer(0, QUARTER_SEC);
   while(TestTimerExpired(0) != TMRArd_EXPIRED){
@@ -274,13 +296,13 @@ void pulseBack(void){
 
 void pulseStraight(){
   stopMtrs();
-  TMRArd_InitTimer(0, EIGTH_SEC);
+  TMRArd_InitTimer(0, SIXTEENTH_SEC);
   while(TestTimerExpired(0) != TMRArd_EXPIRED){
   
   }
-  RightMtrSpeed(65);
-  LeftMtrSpeed(65);
-  TMRArd_InitTimer(0, EIGTH_SEC);
+  RightMtrSpeed(61);
+  LeftMtrSpeed(54);
+  TMRArd_InitTimer(0, SIXTEENTH_SEC);
   while(TestTimerExpired(0) != TMRArd_EXPIRED){
   
   }
@@ -303,7 +325,7 @@ void pulseLeft(){
 
 
 void senseTape(void){
-    static int tapeSensingState = KICK_OFF;
+    static int tapeSensingState = TAPE_SENSING_INIT;
     static unsigned char LEDPosition = 0x00;
     unsigned char newLEDPosition = 0x00;
     
@@ -322,20 +344,28 @@ void senseTape(void){
           break;
         case KICK_OFF:
           pulseStraight();
-          if(newLEDPosition == 0x02){
-            //pulse to stop
+          if(newLEDPosition == 0x05){
+           //for(int i = 0; i<3; i++){
+            //pulse backwards to stop
             pulseBack();
+            //}
+              
             tapeSensingState = FOUND_TAPE;
           }
         break;
         case FOUND_TAPE:
-              stopMtrs();
-              tapeSensingState = START_ROTATING_LEFT;
+            if(newLEDPosition == 0x02){
+                backUp();
+                stopMtrs();
+                tapeSensingState = START_ROTATING_LEFT;
+            }else{
+                pulseBack();
+            }
           break;
         case START_ROTATING_LEFT:
             //test for just the front led
             //bitwise and with the second bit position. if this bit is high it evaluate to true, otherwise it is false
-            if(newLEDPosition == 0x03){
+            if(newLEDPosition == 0x03 || newLEDPosition == 0x01){
                 stopMtrs();
                 tapeSensingState = KEEP_ROTATING_LEFT;
             }else{
@@ -343,7 +373,7 @@ void senseTape(void){
             }
           break;
         case KEEP_ROTATING_LEFT:
-            if(newLEDPosition == 0x02){
+            if(newLEDPosition == 0x02 || newLEDPosition == 0x06){
               for(int i = 0; i<5; i++){
                 pulseLeft();
               }
@@ -379,6 +409,7 @@ unsigned int handleGoingStraight(unsigned char newLEDPosition){
           return CORRECTING_DRIFT_RIGHT;
           break;
        case 0x06:
+         
        break;
     }
 }
@@ -497,6 +528,10 @@ void driveStraightOnTape(){
 
     LEDPosition = newLEDPosition;
     
+    //if(frontBumperHit()){
+      //driveStraightState = AT_END_OF_COURT;
+    //}
+    
     switch (driveStraightState)
     {
       case DRIVING_STRAIGHT_INIT:
@@ -535,19 +570,12 @@ void driveStraightOnTape(){
           //Serial.println("back after correcting drift left");
         //}
        break;
+       case AT_END_OF_COURT:
+         stopMtrs();
+       break;
     }
     
     driveStraightState = newDriveStraightState;
-}
-
-boolean backBumperHit(){
-  if(HIGH == digitalRead(4)){
-    //Serial.println("back bumper touching");
-    return true;
-  }else{
-    //Serial.println("back bumper not touching");
-    return false;
-  }
 }
 
 void getBalls(){
@@ -594,14 +622,13 @@ void getBalls(){
            //wait 3 seconds
            stopMtrs();
            TMRArd_InitTimer(0, THREE_SEC);
-            while(TestTimerExpired(0) != TMRArd_EXPIRED){
-              
+            while(TestTimerExpired(0) != TMRArd_EXPIRED){ 
             }
-            
             backUp();
            getBallsState = THIRD_BALL;
         }else{
           //Serial.println("Backing up!");
+          backUp();
         }
         break;
           break;
@@ -617,6 +644,7 @@ void getBalls(){
             getBallsState = TURN_90_DEGREES_LEFT;
         }else{
           //Serial.println("Backing up!");
+          pulseBack();
         }
         break;
        case TURN_90_DEGREES_LEFT:
