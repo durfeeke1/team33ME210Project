@@ -94,12 +94,14 @@ enum dunkBallsState {
 };
   
 /******************** initialize global state machine *********/
-int globalState = GET_BALLS;
+//int globalState = GET_BALLS;
+int globalState = DUNK_BALLS;
 
 #define frontTapeSensorPin A0
 #define backRightTapeSensorPin A2
 #define backLeftTapeSensorPin A1
 #define backBumperPin 4
+#define servoPin      5
 
 
 /*---------------- Module Function Prototypes ---------------*/
@@ -122,7 +124,7 @@ void respondToTapeFront(void);
 void senseTape(void);
 boolean isTapeSensorHigh(unsigned int,boolean);
 
-void DunkBalls(void);
+void dunkBalls(void);
 Servo myservo;
 int servoPos = 0;
 
@@ -637,6 +639,7 @@ void driveStraightOnTape(){
         //}
        break;
        case AT_END_OF_COURT:
+         globalState = DUNK_BALLS;
          stopMtrs();
        break;
     }
@@ -742,20 +745,26 @@ void getBalls(){
          break;
     }
 }
-void DunkBalls(){
+void dunkBalls(){
   static int dunkBallsState = DUNK_BALLS_INIT;
   switch(dunkBallsState){
     case DUNK_BALLS_INIT:
-      myservo.write(30);
+      Serial.println("DUNK_BALLS_INIT");
+      stopMtrs();
+      myservo.write(110);
+      delay(2000);
       dunkBallsState = DUNKING;
       break;
     case DUNKING:
+      Serial.println("DUNKING");
       myservo.write(118);
+      delay(2000);
       dunkBallsState = RETURN;
       break;
     case RETURN:
-      myservo.write(30);
-      stopMtrs();
+      Serial.println("RETURN");
+      myservo.write(45);
+      delay(2000);
       break;   
      default: 
        stopMtrs();
@@ -771,7 +780,7 @@ void setup() {  // setup() function required for Arduino
   TMRArd_InitTimer(0, TIME_INTERVAL);
   
   //Set pins for servo
-    myservo.attach(9);
+    myservo.attach(servoPin);
 }
 
 void loop() {  // loop() function required for Arduino
@@ -796,6 +805,7 @@ void loop() {  // loop() function required for Arduino
       driveStraightOnTape();
       break;
     case DUNK_BALLS:
+      dunkBalls();
       break;
     default: 
       stopMtrs();
