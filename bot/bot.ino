@@ -17,6 +17,7 @@
 /*---------------- Includes ---------------------------------*/
 #include "Motorlib.h"
 #include <Timers.h>
+#include <Servo.h>
 
 /*---------------- Module Defines ---------------------------*/
 #define ONE_SEC            1000
@@ -48,7 +49,8 @@ enum globalState {
   INIT,
   GET_BALLS,
   TAPE_SENSING,
-  DRIVE_STRAIGHT
+  DRIVE_STRAIGHT,
+  DUNK_BALLS
 };
 
 
@@ -84,6 +86,13 @@ enum getBallsState {
   DONE_WITH_GETTING_BALLS,
   BACK_UP_TO_WALL
 };
+//////DUNKING BALLS STATE//////////////
+enum dunkBallsState {
+  DUNK_BALLS_INIT,
+  DUNKING,
+  RETURN,
+};
+  
 /******************** initialize global state machine *********/
 int globalState = GET_BALLS;
 
@@ -112,6 +121,10 @@ void respondToTapeBL(void);
 void respondToTapeFront(void);
 void senseTape(void);
 boolean isTapeSensorHigh(unsigned int,boolean);
+
+void DunkBalls(void);
+Servo myservo;
+int servoPos = 0;
 
 /**********************************/
 
@@ -729,13 +742,36 @@ void getBalls(){
          break;
     }
 }
-
+void DunkBalls(){
+  static int dunkBallsState = DUNK_BALLS_INIT;
+  switch(dunkBallsState){
+    case DUNK_BALLS_INIT:
+      myservo.write(30);
+      dunkBallsState = DUNKING;
+      break;
+    case DUNKING:
+      myservo.write(118);
+      dunkBallsState = RETURN;
+      break;
+    case RETURN:
+      myservo.write(30);
+      stopMtrs();
+      break;   
+     default: 
+       stopMtrs();
+       break;
+  }
+//  if the front bumper hits enter dunk balls state // 
+}
 /*---------------- Arduino Main Functions -------------------*/
 void setup() {  // setup() function required for Arduino
   Serial.begin(9600);
   Serial.println("Starting Bot...");
   MotorInit();
   TMRArd_InitTimer(0, TIME_INTERVAL);
+  
+  //Set pins for servo
+    myservo.attach(9);
 }
 
 void loop() {  // loop() function required for Arduino
@@ -758,6 +794,8 @@ void loop() {  // loop() function required for Arduino
       break;
     case DRIVE_STRAIGHT:
       driveStraightOnTape();
+      break;
+    case DUNK_BALLS:
       break;
     default: 
       stopMtrs();
