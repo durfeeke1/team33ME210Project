@@ -234,8 +234,8 @@ void veerLeft(){
 }
 
 void goStraight(){
-    RightMtrSpeed(40);
-    LeftMtrSpeed(40);
+    RightMtrSpeed(55);
+    LeftMtrSpeed(55);
 }
 
 void goStraightGetBalls(){
@@ -256,6 +256,11 @@ void kickOff(){
 void rotateToLeft(void){
   RightMtrSpeed(70);
   LeftMtrSpeed(-70); 
+}
+
+void rotateToRight(void){
+  RightMtrSpeed(-70);
+  LeftMtrSpeed(70); 
 }
 
 void turnAroundRightWheel(void){
@@ -323,6 +328,19 @@ void pulseLeft(){
   stopMtrs();
 }
 
+void pulseRight(){
+  stopMtrs();
+  TMRArd_InitTimer(0, EIGTH_SEC);
+  while(TestTimerExpired(0) != TMRArd_EXPIRED){
+  
+  }
+  rotateToRight();
+  TMRArd_InitTimer(0, EIGTH_SEC);
+  while(TestTimerExpired(0) != TMRArd_EXPIRED){
+  
+  }
+  stopMtrs();
+}
 
 void senseTape(void){
     static int tapeSensingState = TAPE_SENSING_INIT;
@@ -374,7 +392,7 @@ void senseTape(void){
           break;
         case KEEP_ROTATING_LEFT:
             if(newLEDPosition == 0x02 || newLEDPosition == 0x06){
-              for(int i = 0; i<5; i++){
+              for(int i = 0; i<3; i++){
                 pulseLeft();
               }
               stopMtrs();
@@ -403,13 +421,16 @@ unsigned int handleGoingStraight(unsigned char newLEDPosition){
           return CORRECTING_DRIFT_LEFT;
          break;
        case 0x03:
+          goStraight();
+            return GOING_STRAIGHT;
        break;
        case 0x04:
           veerLeft();
           return CORRECTING_DRIFT_RIGHT;
           break;
        case 0x06:
-         
+          goStraight();
+          return GOING_STRAIGHT;
        break;
     }
 }
@@ -502,6 +523,8 @@ unsigned int handleBackAfterCorrectingDR(unsigned char newLEDPosition){
        case 0x03:
          break;
        case 0x04:
+           veerLeft();
+           return BACK_AFTER_CORRECTING_DR;
          break;
        case 0x06:
          //pulse motors in opposite directions to kill speed
