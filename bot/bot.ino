@@ -25,9 +25,9 @@
 #define OFF                0x00
 #define ON                 0x01
 
-#define FAST               10
-#define MEDIUM             5
-#define SLOW               2
+#define FAST               100
+#define MEDIUM             50
+#define SLOW               20
 
 #define BACKUP_TIMER       0
 #define TURN_TIMER         1
@@ -54,10 +54,12 @@ enum globalState {
 /****** TAPE SENSING STATES ******/
 enum tapeSensingState {
   TAPE_SENSING_INIT,
+  KICK_OFF,
   FOUND_TAPE,
   BACKING_UP,
   START_ROTATING_LEFT,
-  ROTATE_AROUND_RIGHT_WHEEL
+  KEEP_ROTATING_LEFT,
+  ALIGNED
 };
 
 /****** DRIVING STRAIGHT STATES ******/
@@ -80,10 +82,12 @@ enum getBallsState {
   DONE_WITH_GETTING_BALLS,
   BACK_UP_TO_WALL
 };
+/******************** initialize global state machine *********/
+int globalState = TAPE_SENSING;
 
-#define frontTapeSensorPin A1
+#define frontTapeSensorPin A0
 #define backRightTapeSensorPin A2
-#define backLeftTapeSensorPin A0
+#define backLeftTapeSensorPin A1
 #define backBumperPin 4
 
 
@@ -108,7 +112,7 @@ void senseTape(void);
 boolean isTapeSensorHigh(unsigned int,boolean);
 
 /**********************************/
-int globalState = GET_BALLS;
+
 
 boolean isTapeSensorHigh(uint8_t tapeSensorPin, boolean prevStatus){
     unsigned int currPinVal = analogRead(tapeSensorPin);
@@ -167,35 +171,75 @@ unsigned char getNewLEDPosition(void){
     return newLEDPosition;
 }
 
+void runStraight(void){
+  RightMtrSpeed(MEDIUM);
+  LeftMtrSpeed(MEDIUM); 
+}
+
+void backUp(void){
+  RightMtrSpeed(-70);
+  LeftMtrSpeed(-65); 
+}
+
+void backUpHard(void){
+  RightMtrSpeed(-FAST);
+  LeftMtrSpeed(-FAST); 
+}
+
+void stopMtrs(void){
+  RightMtrSpeed(0);
+  LeftMtrSpeed(0); 
+}
+
+void turnRight(void){
+  RightMtrSpeed(-MEDIUM);
+  LeftMtrSpeed(MEDIUM); 
+}
+
+void turnLeft(void){
+  RightMtrSpeed(MEDIUM);
+  LeftMtrSpeed(-MEDIUM); 
+}
+
 void veerRight(){
-     RightMtrSpeed(4);
-     LeftMtrSpeed(6);
+     RightMtrSpeed(40);
+     LeftMtrSpeed(60);
 }
 
 void veerLeft(){
-     RightMtrSpeed(6);
-     LeftMtrSpeed(5);
+     RightMtrSpeed(60);
+     LeftMtrSpeed(50);
 }
 
 void goStraight(){
-    RightMtrSpeed(6);
-    LeftMtrSpeed(7);
+    RightMtrSpeed(41);
+    LeftMtrSpeed(40);
+}
+
+//to make sure we can get out of stall
+void kickOff(){
+    RightMtrSpeed(70);
+    LeftMtrSpeed(70);
+  TMRArd_InitTimer(0, HALF_SEC);
+  while(TestTimerExpired(0) != TMRArd_EXPIRED){
+  
+  }
 }
 
 void rotateToLeft(void){
-  RightMtrSpeed(6);
-  LeftMtrSpeed(-5); 
+  RightMtrSpeed(70);
+  LeftMtrSpeed(-70); 
 }
 
 void turnAroundRightWheel(void){
-  RightMtrSpeed(1);
-  LeftMtrSpeed(-6); 
+  RightMtrSpeed(10);
+  LeftMtrSpeed(-60); 
 }
 
-void turn90DegreesLeft(void){
+void turn90DegreesRight(void){
   TMRArd_InitTimer(0, NINETY_DEG);
-  RightMtrSpeed(8);
-  LeftMtrSpeed(-6); 
+  RightMtrSpeed(-60);
+  LeftMtrSpeed(70); 
   while(TestTimerExpired(0) != TMRArd_EXPIRED){
   
   }
@@ -207,9 +251,52 @@ void turn90DegreesLeft(void){
  
 }
 
+void pulseBack(void){
+  stopMtrs();
+  TMRArd_InitTimer(0, SIXTEENTH_SEC);
+  while(TestTimerExpired(0) != TMRArd_EXPIRED){
+  
+  }
+  backUp();
+  TMRArd_InitTimer(0, SIXTEENTH_SEC);
+  while(TestTimerExpired(0) != TMRArd_EXPIRED){
+  
+  }
+  stopMtrs();
+}
+
+void pulseStraight(){
+  stopMtrs();
+  TMRArd_InitTimer(0, SIXTEENTH_SEC);
+  while(TestTimerExpired(0) != TMRArd_EXPIRED){
+  
+  }
+  RightMtrSpeed(55);
+  LeftMtrSpeed(55);
+  TMRArd_InitTimer(0, SIXTEENTH_SEC);
+  while(TestTimerExpired(0) != TMRArd_EXPIRED){
+  
+  }
+  stopMtrs();
+}
+
+void pulseLeft(){
+  stopMtrs();
+  TMRArd_InitTimer(0, EIGTH_SEC);
+  while(TestTimerExpired(0) != TMRArd_EXPIRED){
+  
+  }
+  rotateToLeft();
+  TMRArd_InitTimer(0, EIGTH_SEC);
+  while(TestTimerExpired(0) != TMRArd_EXPIRED){
+  
+  }
+  stopMtrs();
+}
+
 
 void senseTape(void){
-    static int tapeSensingState = TAPE_SENSING_INIT;
+    static int tapeSensingState = KICK_OFF;
     static unsigned char LEDPosition = 0x00;
     unsigned char newLEDPosition = 0x00;
     
@@ -223,39 +310,44 @@ void senseTape(void){
 
      switch (tapeSensingState) {
         case TAPE_SENSING_INIT:
+          kickOff();
+          tapeSensingState = KICK_OFF;
+          break;
+        case KICK_OFF:
           goStraight();
           if(newLEDPosition == 0x02){
             //pulse to stop
-           
-            stopMtrs();
+            pulseBack();
             tapeSensingState = FOUND_TAPE;
           }
-          break;
+        break;
         case FOUND_TAPE:
-            if(newLEDPosition != 0x05){
-               backUp();
-            }else{
               stopMtrs();
               tapeSensingState = START_ROTATING_LEFT;
-            }
           break;
         case START_ROTATING_LEFT:
             //test for just the front led
             //bitwise and with the second bit position. if this bit is high it evaluate to true, otherwise it is false
-            if(newLEDPosition == 0x04){
+            if(newLEDPosition == 0x03){
                 stopMtrs();
-                tapeSensingState = ROTATE_AROUND_RIGHT_WHEEL;
+                tapeSensingState = KEEP_ROTATING_LEFT;
             }else{
-              rotateToLeft();
+              pulseLeft();
             }
           break;
-        case ROTATE_AROUND_RIGHT_WHEEL:
-            if(newLEDPosition == 0x02 || newLEDPosition == 0x04 || newLEDPosition == 0x01){
-                stopMtrs();
-                globalState = DRIVE_STRAIGHT;
+        case KEEP_ROTATING_LEFT:
+            if(newLEDPosition == 0x02){
+              for(int i = 0; i<5; i++){
+                pulseLeft();
+              }
+              stopMtrs();
+              tapeSensingState = ALIGNED;
             }else{
-              turnAroundRightWheel();
+              pulseLeft();
             }
+        break;
+        case ALIGNED:
+          //globalState = DRIVE_STRAIGHT;
         break;
      }
 };
@@ -521,7 +613,7 @@ void getBalls(){
         }
         break;
        case TURN_90_DEGREES_LEFT:
-          turn90DegreesLeft();
+          turn90DegreesRight();
           backUp();
           getBallsState = BACK_UP_TO_WALL;
           break;
@@ -637,35 +729,4 @@ void outputState(char state) {
     break; 
   }
 }
-
-void runStraight(void){
-  RightMtrSpeed(MEDIUM);
-  LeftMtrSpeed(MEDIUM); 
-}
-
-void backUp(void){
-  RightMtrSpeed(-6);
-  LeftMtrSpeed(-5); 
-}
-
-void backUpHard(void){
-  RightMtrSpeed(-FAST);
-  LeftMtrSpeed(-FAST); 
-}
-
-void stopMtrs(void){
-  RightMtrSpeed(0);
-  LeftMtrSpeed(0); 
-}
-
-void turnRight(void){
-  RightMtrSpeed(-MEDIUM);
-  LeftMtrSpeed(MEDIUM); 
-}
-
-void turnLeft(void){
-  RightMtrSpeed(MEDIUM);
-  LeftMtrSpeed(-MEDIUM); 
-}
-
 
