@@ -253,8 +253,8 @@ void veerLeft(){
 }
 
 void goStraight(){
-    RightMtrSpeed(65);
-    LeftMtrSpeed(70);
+    RightMtrSpeed(69);
+    LeftMtrSpeed(75);
 }
 
 void goStraightGetBalls(){
@@ -460,6 +460,7 @@ unsigned int handleGoingStraight(unsigned char newLEDPosition){
             return GOING_STRAIGHT;
           break;
        case 0x01:
+          pulseRightShort();
           veerRight();
           return CORRECTING_DRIFT_LEFT;
          break;
@@ -493,7 +494,6 @@ unsigned int handleCorrectingDriftLeft(unsigned char newLEDPosition){
        case 0x03:
          //pulse motors in opposite directions to kill speed
          backUp();
-         //turnRight();
          veerLeft();
          return BACK_AFTER_CORRECTING_DL;
          break;
@@ -518,7 +518,7 @@ unsigned int handleBackAfterCorrectingDL(unsigned char newLEDPosition){
        case 0x03:
          //pulse motors in opposite directions to kill speed
          backUp();
-         //turnRight();
+         pulseLeftShort();
          veerLeft();
          return BACK_AFTER_CORRECTING_DL;
          break;
@@ -546,7 +546,8 @@ unsigned int handleCorrectingDriftRight(unsigned char newLEDPosition){
           break;
        case 0x06:
          //pulse motors in opposite directions to kill speed
-         backUp();   
+         backUp();
+         pulseRightShort();
          veerRight();
          return BACK_AFTER_CORRECTING_DR;
        break;
@@ -597,6 +598,11 @@ void driveStraightOnTape(){
     
     if(frontBumperHit()){
       driveStraightState = AT_END_OF_COURT;
+      
+      TMRArd_InitTimer(0, HALF_SEC);
+      while(TestTimerExpired(0) != TMRArd_EXPIRED){
+        
+      }
     }
     
     switch (driveStraightState)
@@ -641,13 +647,13 @@ void driveStraightOnTape(){
         if(!frontBumperHit()){
             pulseStraight();
         }else{
-         for(int i=0;i<5;i++){
-           pulseStraight();
+         //give room for rim
+         for(int i=0;i<2;i++){
+           pulseBack();
          }
          stopMtrs();
          globalState = DUNK_BALLS;
         }
-         
        break;
     }
     
