@@ -38,8 +38,9 @@
 #define HALF_SEC           500
 #define THREE_QUARTER_SEC  750
 #define FULL_SEC           1000
-#define NINETY_DEG         800
+#define NINETY_DEG         650
 #define THREE_SEC          3000
+#define FOUR_N_A_HALF_SEC  4000
 
 #define FRONT              0x00
 #define BACK               0x01
@@ -219,7 +220,7 @@ void runStraight(void){
 }
 
 void backUp(void){
-  RightMtrSpeed(-60);
+  RightMtrSpeed(-55);
   LeftMtrSpeed(-65); 
 }
 
@@ -317,7 +318,7 @@ void pulseStraight(){
   
   }
   RightMtrSpeed(63);
-  LeftMtrSpeed(72);
+  LeftMtrSpeed(69);
   TMRArd_InitTimer(0, SIXTEENTH_SEC);
   while(TestTimerExpired(0) != TMRArd_EXPIRED){
   
@@ -467,7 +468,7 @@ void senseTape(void){
           break;
         case KEEP_ROTATING_LEFT:
             if(newLEDPosition == 0x02 ){
-              for(int i = 0; i<5; i++){
+              for(int i = 0; i<7; i++){
                 pulseLeft();
               }
               stopMtrs();
@@ -491,10 +492,11 @@ void senseTape(void){
           if(frontBumperHit()){
               Serial.println("go dunk now");
               globalState = DUNK_BALLS;
-          }else{
-              Serial.println("not dunking");
-              globalState = DRIVE_STRAIGHT;
           }
+//else{
+//              Serial.println("not dunking");
+//              globalState = DRIVE_STRAIGHT;
+//       }
         break;
      }
 };
@@ -781,7 +783,7 @@ void getBalls(){
         if(backBumperHit()){
            //go straight for a short period of time
            runStraight();
-           TMRArd_InitTimer(0, 2*FULL_SEC);
+           TMRArd_InitTimer(0, FULL_SEC);
             while(TestTimerExpired(0) != TMRArd_EXPIRED){
               
             }
@@ -867,11 +869,11 @@ void loop() {  // loop() function required for Arduino
     if (TestForKey()){
       RespToKey();
     }
-    
    switch (globalState) {
     case INIT:
       //runStraight();
-      globalState = GET_BALLS;
+//      globalState = GET_BALLS;
+      globalState = TAPE_SENSING;
       break;
     case GET_BALLS:
       Serial.println("GET BALLS!");
@@ -885,12 +887,15 @@ void loop() {  // loop() function required for Arduino
       //driveStraightOnTape();
       Serial.println("DRIVING STRAIGHT");
       if(frontBumperHit()){
-        for(int i=0;i<7;i++){
+        for(int i=0;i<5;i++){
           pulseBack();
         }
           globalState = TAPE_SENSING; 
       }else{
+          TMRArd_InitTimer(0, FOUR_N_A_HALF_SEC);
           runStraight();
+          while(TestTimerExpired(0) != TMRArd_EXPIRED){ 
+          }
       }
       break;
     case DUNK_BALLS:
