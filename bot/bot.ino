@@ -318,7 +318,7 @@ void pulseStraight(){
   
   }
   RightMtrSpeed(63);
-  LeftMtrSpeed(69);
+  LeftMtrSpeed(67);
   TMRArd_InitTimer(0, SIXTEENTH_SEC);
   while(TestTimerExpired(0) != TMRArd_EXPIRED){
   
@@ -437,6 +437,7 @@ void senseTape(void){
           }
           break;
         case KICK_OFF:
+        Serial.println("Kick Off");
           //kickOff();
           pulseStraight();
           if(newLEDPosition == 0x05){
@@ -448,8 +449,9 @@ void senseTape(void){
           }
         break;
         case FOUND_TAPE:
+          Serial.println("FOUND TAPE");
             if(newLEDPosition == 0x02){
-                backUp();
+//                backUp();
                 stopMtrs();
                 tapeSensingState = START_ROTATING_LEFT;
             }else{
@@ -872,15 +874,14 @@ void loop() {  // loop() function required for Arduino
    switch (globalState) {
     case INIT:
       //runStraight();
-//      globalState = GET_BALLS;
-      globalState = TAPE_SENSING;
+      globalState = GET_BALLS;
       break;
     case GET_BALLS:
       Serial.println("GET BALLS!");
       getBalls();
       break;
     case TAPE_SENSING:
-      Serial.println("Sensing tape!");
+//      Serial.println("Sensing tape!");
       senseTape();
       break;
     case DRIVE_STRAIGHT:
