@@ -38,7 +38,7 @@
 #define HALF_SEC           500
 #define THREE_QUARTER_SEC  750
 #define FULL_SEC           1000
-#define NINETY_DEG         700
+#define NINETY_DEG         800
 #define THREE_SEC          3000
 
 #define FRONT              0x00
@@ -90,12 +90,16 @@ enum getBallsState {
 enum dunkBallsState {
   DUNK_BALLS_INIT,
   DUNKING,
-  RETURN,
+  RETURN1,
+  RETURN2,
+  RETURN3,
+  DONE_DUNKING
 };
   
 /******************** initialize global state machine *********/
-//int globalState = GET_BALLS;
-int globalState = DUNK_BALLS;
+int globalState = GET_BALLS;
+//int globalState = DUNK_BALLS;
+
 
 #define frontTapeSensorPin A0
 #define backRightTapeSensorPin A2
@@ -214,8 +218,8 @@ void runStraight(void){
 }
 
 void backUp(void){
-  RightMtrSpeed(-58);
-  LeftMtrSpeed(-50); 
+  RightMtrSpeed(-60);
+  LeftMtrSpeed(-65); 
 }
 
 void backUpHard(void){
@@ -249,8 +253,8 @@ void veerLeft(){
 }
 
 void goStraight(){
-    RightMtrSpeed(55);
-    LeftMtrSpeed(55);
+    RightMtrSpeed(65);
+    LeftMtrSpeed(70);
 }
 
 void goStraightGetBalls(){
@@ -260,33 +264,28 @@ void goStraightGetBalls(){
 
 //to make sure we can get out of stall
 void kickOff(){
-   RightMtrSpeed(60);
-   LeftMtrSpeed(56);
-  TMRArd_InitTimer(0, HALF_SEC);
+   RightMtrSpeed(70);
+   LeftMtrSpeed(80);
+  TMRArd_InitTimer(0, QUARTER_SEC);
   while(TestTimerExpired(0) != TMRArd_EXPIRED){
   
   }
 }
 
 void rotateToLeft(void){
-  RightMtrSpeed(70);
-  LeftMtrSpeed(-70); 
+  RightMtrSpeed(75);
+  LeftMtrSpeed(-80); 
 }
 
 void rotateToRight(void){
-  RightMtrSpeed(-70);
-  LeftMtrSpeed(70); 
-}
-
-void turnAroundRightWheel(void){
-  RightMtrSpeed(10);
-  LeftMtrSpeed(-60); 
+  RightMtrSpeed(-75);
+  LeftMtrSpeed(80); 
 }
 
 void turn90DegreesLeft(void){
   TMRArd_InitTimer(0, NINETY_DEG);
-  RightMtrSpeed(-70);
-  LeftMtrSpeed(70); 
+  RightMtrSpeed(-85);
+  LeftMtrSpeed(85); 
   while(TestTimerExpired(0) != TMRArd_EXPIRED){
   
   }
@@ -305,8 +304,8 @@ void pulseBack(void){
   while(TestTimerExpired(0) != TMRArd_EXPIRED){
   
   }
-  RightMtrSpeed(-58);
-  LeftMtrSpeed(-55);
+  RightMtrSpeed(-70);
+  LeftMtrSpeed(-70);
   TMRArd_InitTimer(0, EIGTH_SEC);
   while(TestTimerExpired(0) != TMRArd_EXPIRED){
   
@@ -320,8 +319,8 @@ void pulseStraight(){
   while(TestTimerExpired(0) != TMRArd_EXPIRED){
   
   }
-  RightMtrSpeed(61);
-  LeftMtrSpeed(54);
+  RightMtrSpeed(65);
+  LeftMtrSpeed(69);
   TMRArd_InitTimer(0, SIXTEENTH_SEC);
   while(TestTimerExpired(0) != TMRArd_EXPIRED){
   
@@ -331,12 +330,12 @@ void pulseStraight(){
 
 void pulseLeft(){
   stopMtrs();
-  TMRArd_InitTimer(0, EIGTH_SEC);
+  TMRArd_InitTimer(0, SIXTEENTH_SEC);
   while(TestTimerExpired(0) != TMRArd_EXPIRED){
   
   }
   rotateToLeft();
-  TMRArd_InitTimer(0, EIGTH_SEC);
+  TMRArd_InitTimer(0, SIXTEENTH_SEC);
   while(TestTimerExpired(0) != TMRArd_EXPIRED){
   
   }
@@ -350,10 +349,10 @@ void pulseLeftShort(){
   
   }
   rotateToLeft();
-  TMRArd_InitTimer(0, SIXTEENTH_SEC);
-  while(TestTimerExpired(0) != TMRArd_EXPIRED){
+  //TMRArd_InitTimer(0, SIXTEENTH_SEC);
+  //while(TestTimerExpired(0) != TMRArd_EXPIRED){
   
-  }
+  //}
   stopMtrs();
 }
 
@@ -365,21 +364,21 @@ void pulseRightShort(){
   
   }
   rotateToRight();
-  TMRArd_InitTimer(0, SIXTEENTH_SEC);
-  while(TestTimerExpired(0) != TMRArd_EXPIRED){
+  //TMRArd_InitTimer(0, SIXTEENTH_SEC);
+  //while(TestTimerExpired(0) != TMRArd_EXPIRED){
   
-  }
+  //}
   stopMtrs();
 }
 
 void pulseRight(){
   stopMtrs();
-  TMRArd_InitTimer(0, EIGTH_SEC);
+  TMRArd_InitTimer(0, SIXTEENTH_SEC);
   while(TestTimerExpired(0) != TMRArd_EXPIRED){
   
   }
   rotateToRight();
-  TMRArd_InitTimer(0, EIGTH_SEC);
+  TMRArd_InitTimer(0, SIXTEENTH_SEC);
   while(TestTimerExpired(0) != TMRArd_EXPIRED){
   
   }
@@ -639,8 +638,16 @@ void driveStraightOnTape(){
         //}
        break;
        case AT_END_OF_COURT:
-         globalState = DUNK_BALLS;
+        if(!frontBumperHit()){
+            pulseStraight();
+        }else{
+         for(int i=0;i<5;i++){
+           pulseStraight();
+         }
          stopMtrs();
+         globalState = DUNK_BALLS;
+        }
+         
        break;
     }
     
@@ -705,7 +712,7 @@ void getBalls(){
         if(backBumperHit()){
            //go straight for a short period of time
            goStraightGetBalls();
-           TMRArd_InitTimer(0, HALF_SEC+QUARTER_SEC);
+           TMRArd_InitTimer(0, FULL_SEC);
             while(TestTimerExpired(0) != TMRArd_EXPIRED){
               
             }
@@ -751,21 +758,44 @@ void dunkBalls(){
     case DUNK_BALLS_INIT:
       Serial.println("DUNK_BALLS_INIT");
       stopMtrs();
-      myservo.write(110);
-      delay(2000);
+      myservo.write(100);
+      delay(2*FULL_SEC);
       dunkBallsState = DUNKING;
       break;
     case DUNKING:
       Serial.println("DUNKING");
-      myservo.write(118);
-      delay(2000);
-      dunkBallsState = RETURN;
+      myservo.write(140);
+      delay(2*FULL_SEC);
+      myservo.write(130);
+      delay(HALF_SEC);
+      myservo.write(120);
+      delay(HALF_SEC);
+      dunkBallsState = RETURN1;
       break;
-    case RETURN:
+    case RETURN1:
       Serial.println("RETURN");
-      myservo.write(45);
-      delay(2000);
+      myservo.write(110);
+      delay(HALF_SEC);
+      myservo.write(100);
+      delay(HALF_SEC);
+      myservo.write(90);
+      delay(HALF_SEC);
+      dunkBallsState = RETURN2;
+      break; 
+    case RETURN2:
+      myservo.write(80);
+      delay(HALF_SEC);
+      myservo.write(70);
+      delay(HALF_SEC);
+      dunkBallsState = RETURN3;
       break;   
+    case RETURN3:
+      myservo.write(68);
+      dunkBallsState = DONE_DUNKING;  
+      break;
+    case DONE_DUNKING:
+      //place holder
+      break;
      default: 
        stopMtrs();
        break;
@@ -776,11 +806,11 @@ void dunkBalls(){
 void setup() {  // setup() function required for Arduino
   Serial.begin(9600);
   Serial.println("Starting Bot...");
+  //Set pins for servo
+  myservo.attach(5);
+  myservo.write(68);
   MotorInit();
   TMRArd_InitTimer(0, TIME_INTERVAL);
-  
-  //Set pins for servo
-    myservo.attach(servoPin);
 }
 
 void loop() {  // loop() function required for Arduino

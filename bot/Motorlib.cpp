@@ -36,7 +36,7 @@ When      Who  Description
 #define LR_BUMP      7   // left rear bumper sensor connected to pin 7
 
 #define L_MOTOR_DIR  8   // left motor direction controlled with pin 8
-#define L_MOTOR_EN   9   // left motor enable controlled by pin 9
+#define L_MOTOR_EN   6   // left motor enable controlled by pin 9
 #define R_MOTOR_DIR  10  // right motor direction controlled with pin 10
 #define R_MOTOR_EN   11  // right motor enable controlled by pin 11
 
