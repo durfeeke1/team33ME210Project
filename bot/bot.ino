@@ -57,6 +57,8 @@ enum globalState {
 /****** TAPE SENSING STATES ******/
 enum tapeSensingState {
   TAPE_SENSING_INIT,
+  TURN_90_DEGREES_LEFT,
+  BACK_UP_TO_WALL,
   KICK_OFF,
   FOUND_TAPE,
   BACKING_UP,
@@ -82,9 +84,7 @@ enum getBallsState {
   FIRST_BALL,
   SECOND_BALL,
   THIRD_BALL,
-  TURN_90_DEGREES_LEFT,
-  DONE_WITH_GETTING_BALLS,
-  BACK_UP_TO_WALL
+  DONE_WITH_GETTING_BALLS
 };
 //////DUNKING BALLS STATE//////////////
 enum dunkBallsState {
@@ -97,7 +97,8 @@ enum dunkBallsState {
 };
   
 /******************** initialize global state machine *********/
-int globalState = GET_BALLS;
+int globalState = INIT;
+//int globalState = GET_BALLS;
 //int globalState = DUNK_BALLS;
 
 
@@ -194,7 +195,7 @@ unsigned char getNewLEDPosition(void){
 
 boolean backBumperHit(){
   if(HIGH == digitalRead(4)){
-    //Serial.println("back bumper touching");
+    Serial.println("back bumper touching");
     return true;
   }else{
     //Serial.println("back bumper not touching");
@@ -204,7 +205,7 @@ boolean backBumperHit(){
 
 boolean frontBumperHit(){
   if(HIGH == digitalRead(2)){
-    //Serial.println("back bumper touching");
+    Serial.println("front bumper touching");
     return true;
   }else{
     //Serial.println("back bumper not touching");
@@ -213,8 +214,8 @@ boolean frontBumperHit(){
 }
 
 void runStraight(void){
-  RightMtrSpeed(MEDIUM);
-  LeftMtrSpeed(MEDIUM); 
+  RightMtrSpeed(55);
+  LeftMtrSpeed(60); 
 }
 
 void backUp(void){
@@ -243,23 +244,18 @@ void turnLeft(void){
 }
 
 void veerRight(){
-     RightMtrSpeed(40);
-     LeftMtrSpeed(60);
+     RightMtrSpeed(50);
+     LeftMtrSpeed(70);
 }
 
 void veerLeft(){
-     RightMtrSpeed(60);
-     LeftMtrSpeed(50);
+     RightMtrSpeed(75);
+     LeftMtrSpeed(60);
 }
 
 void goStraight(){
     RightMtrSpeed(69);
-    LeftMtrSpeed(75);
-}
-
-void goStraightGetBalls(){
-    RightMtrSpeed(55);
-    LeftMtrSpeed(55);
+    LeftMtrSpeed(80);
 }
 
 //to make sure we can get out of stall
@@ -313,14 +309,15 @@ void pulseBack(void){
   stopMtrs();
 }
 
+/***** for tape sensing ******/////
 void pulseStraight(){
   stopMtrs();
   TMRArd_InitTimer(0, SIXTEENTH_SEC);
   while(TestTimerExpired(0) != TMRArd_EXPIRED){
   
   }
-  RightMtrSpeed(65);
-  LeftMtrSpeed(69);
+  RightMtrSpeed(63);
+  LeftMtrSpeed(72);
   TMRArd_InitTimer(0, SIXTEENTH_SEC);
   while(TestTimerExpired(0) != TMRArd_EXPIRED){
   
@@ -342,35 +339,6 @@ void pulseLeft(){
   stopMtrs();
 }
 
-void pulseLeftShort(){
-  stopMtrs();
-  TMRArd_InitTimer(0, SIXTEENTH_SEC);
-  while(TestTimerExpired(0) != TMRArd_EXPIRED){
-  
-  }
-  rotateToLeft();
-  //TMRArd_InitTimer(0, SIXTEENTH_SEC);
-  //while(TestTimerExpired(0) != TMRArd_EXPIRED){
-  
-  //}
-  stopMtrs();
-}
-
-
-void pulseRightShort(){
-  stopMtrs();
-  TMRArd_InitTimer(0, SIXTEENTH_SEC);
-  while(TestTimerExpired(0) != TMRArd_EXPIRED){
-  
-  }
-  rotateToRight();
-  //TMRArd_InitTimer(0, SIXTEENTH_SEC);
-  //while(TestTimerExpired(0) != TMRArd_EXPIRED){
-  
-  //}
-  stopMtrs();
-}
-
 void pulseRight(){
   stopMtrs();
   TMRArd_InitTimer(0, SIXTEENTH_SEC);
@@ -384,7 +352,52 @@ void pulseRight(){
   }
   stopMtrs();
 }
+/***** for tape sensing ******/////
 
+/***** for Driving Straight sensing ******/////
+void pulseStraightDriveStraight(){
+  stopMtrs();
+  TMRArd_InitTimer(0, SIXTEENTH_SEC);
+  while(TestTimerExpired(0) != TMRArd_EXPIRED){
+  
+  }
+  RightMtrSpeed(75);
+  LeftMtrSpeed(82);
+  TMRArd_InitTimer(0, SIXTEENTH_SEC);
+  while(TestTimerExpired(0) != TMRArd_EXPIRED){
+  
+  }
+  stopMtrs();
+}
+
+void pulseLeftDriveStraight(){
+  stopMtrs();
+  TMRArd_InitTimer(0, SIXTEENTH_SEC);
+  while(TestTimerExpired(0) != TMRArd_EXPIRED){
+  
+  }
+  rotateToLeft();
+  TMRArd_InitTimer(0, SIXTEENTH_SEC);
+  while(TestTimerExpired(0) != TMRArd_EXPIRED){
+  
+  }
+  stopMtrs();
+}
+
+void pulseRightDriveStraight(){
+  stopMtrs();
+  TMRArd_InitTimer(0, SIXTEENTH_SEC);
+  while(TestTimerExpired(0) != TMRArd_EXPIRED){
+  
+  }
+  rotateToRight();
+  TMRArd_InitTimer(0, SIXTEENTH_SEC);
+  while(TestTimerExpired(0) != TMRArd_EXPIRED){
+  
+  }
+  stopMtrs();
+}
+/***** for Driving Straight sensing ******/////
 void senseTape(void){
     static int tapeSensingState = TAPE_SENSING_INIT;
     static unsigned char LEDPosition = 0x00;
@@ -400,17 +413,36 @@ void senseTape(void){
 
      switch (tapeSensingState) {
         case TAPE_SENSING_INIT:
-          kickOff();
-          tapeSensingState = KICK_OFF;
+          tapeSensingState = TURN_90_DEGREES_LEFT;
+          break;
+       case TURN_90_DEGREES_LEFT:
+          turn90DegreesLeft();
+          //backUp();
+          tapeSensingState = BACK_UP_TO_WALL;
+          break;
+       case BACK_UP_TO_WALL:
+          if(backBumperHit()){
+             //go straight for a short period of time
+             pulseBack();
+             TMRArd_InitTimer(0, HALF_SEC);
+              while(TestTimerExpired(0) != TMRArd_EXPIRED){
+                pulseBack();
+              }
+              pulseBack();
+              tapeSensingState = KICK_OFF;
+          }else{
+            //Serial.println("Backing up!");
+            backUp();
+          }
           break;
         case KICK_OFF:
+          //kickOff();
           pulseStraight();
           if(newLEDPosition == 0x05){
            //for(int i = 0; i<3; i++){
             //pulse backwards to stop
             pulseBack();
             //}
-              
             tapeSensingState = FOUND_TAPE;
           }
         break;
@@ -434,18 +466,35 @@ void senseTape(void){
             }
           break;
         case KEEP_ROTATING_LEFT:
-            if(newLEDPosition == 0x02 || newLEDPosition == 0x06){
-              for(int i = 0; i<3; i++){
+            if(newLEDPosition == 0x02 ){
+              for(int i = 0; i<5; i++){
                 pulseLeft();
               }
               stopMtrs();
               tapeSensingState = ALIGNED;
-            }else{
+            }else if(newLEDPosition == 0x06){
+              for(int i = 0; i<2; i++){
+                pulseRight();
+              }
+              stopMtrs();
+              tapeSensingState = ALIGNED;
+            }
+            else{
               pulseLeft();
             }
         break;
         case ALIGNED:
-          globalState = DRIVE_STRAIGHT;
+          tapeSensingState = TAPE_SENSING_INIT;
+          for(int i=0;i<10;i++){
+           pulseStraight(); 
+          }
+          if(frontBumperHit()){
+              Serial.println("go dunk now");
+              globalState = DUNK_BALLS;
+          }else{
+              Serial.println("not dunking");
+              globalState = DRIVE_STRAIGHT;
+          }
         break;
      }
 };
@@ -453,33 +502,39 @@ void senseTape(void){
 unsigned int handleGoingStraight(unsigned char newLEDPosition){
     switch (newLEDPosition) {
       case 0x00:
+        globalState = TAPE_SENSING;
         break;
        case 0x02:
        case 0x07:
-            goStraight();
-            return GOING_STRAIGHT;
+            //runStraight();
+            pulseStraightDriveStraight();
+            Serial.println("Going Straight");
           break;
        case 0x01:
-          pulseRightShort();
-          veerRight();
-          return CORRECTING_DRIFT_LEFT;
+          Serial.println("Veering Right");
+          //pulseRightShort();
+          //veerRight();
+          pulseRightDriveStraight();
          break;
        case 0x03:
-          goStraight();
-            return GOING_STRAIGHT;
-       break;
+          Serial.println("Going Straight");
+          //goStraight();
+          pulseStraightDriveStraight();
+          break;
        case 0x04:
-          pulseLeftShort();
-          veerLeft();
-          return CORRECTING_DRIFT_RIGHT;
+         Serial.println("Veering Left");
+          //pulseLeftShort();
+          //veerLeft();
+          pulseLeftDriveStraight();
           break;
        case 0x06:
-          goStraight();
-          return GOING_STRAIGHT;
+         Serial.println("Going Straight");
+         //runStraight();
+         pulseStraightDriveStraight();
        break;
     }
 }
-
+/*
 unsigned int handleCorrectingDriftLeft(unsigned char newLEDPosition){
     switch (newLEDPosition) {
       case 0x00:
@@ -579,7 +634,7 @@ unsigned int handleBackAfterCorrectingDR(unsigned char newLEDPosition){
        break;
     }
 }
-
+*/
 
 void driveStraightOnTape(){
     static unsigned int driveStraightState = DRIVING_STRAIGHT_INIT;
@@ -605,6 +660,7 @@ void driveStraightOnTape(){
       }
     }
     
+    
     switch (driveStraightState)
     {
       case DRIVING_STRAIGHT_INIT:
@@ -613,12 +669,16 @@ void driveStraightOnTape(){
           //Serial.println("Driving Straight Init!");
         //}
         break;
+      
       case GOING_STRAIGHT:
-        newDriveStraightState = handleGoingStraight(newLEDPosition);
+        handleGoingStraight(newLEDPosition);
+        //runStraight();
         //if(newDriveStraightState != driveStraightState){
           //Serial.println("Going Straight");
         //}
         break;
+        
+      /*
       case CORRECTING_DRIFT_RIGHT:
         newDriveStraightState = handleCorrectingDriftRight(newLEDPosition);
         //if(newDriveStraightState != driveStraightState){
@@ -643,6 +703,7 @@ void driveStraightOnTape(){
           //Serial.println("back after correcting drift left");
         //}
        break;
+     */
        case AT_END_OF_COURT:
         //make sure you are at the end of the court
          for(int i=0;i<5;i++){
@@ -676,7 +737,7 @@ void getBalls(){
         if(backBumperHit()){
            Serial.println("motors stopped");
            //go straight for a short period of time
-           goStraight();
+           runStraight();
            TMRArd_InitTimer(0, HALF_SEC);
             while(TestTimerExpired(0) != TMRArd_EXPIRED){
               
@@ -698,7 +759,7 @@ void getBalls(){
         if(backBumperHit()){
            Serial.println("motors stopped");
            //go straight for a short period of time
-           goStraightGetBalls();
+           runStraight();
            TMRArd_InitTimer(0, HALF_SEC);
             while(TestTimerExpired(0) != TMRArd_EXPIRED){
               
@@ -719,8 +780,8 @@ void getBalls(){
       case THIRD_BALL:
         if(backBumperHit()){
            //go straight for a short period of time
-           goStraightGetBalls();
-           TMRArd_InitTimer(0, FULL_SEC);
+           runStraight();
+           TMRArd_InitTimer(0, 2*FULL_SEC);
             while(TestTimerExpired(0) != TMRArd_EXPIRED){
               
             }
@@ -728,35 +789,15 @@ void getBalls(){
            TMRArd_InitTimer(0, THREE_SEC);
             while(TestTimerExpired(0) != TMRArd_EXPIRED){ 
             }
-            getBallsState = TURN_90_DEGREES_LEFT;
+            getBallsState = DONE_WITH_GETTING_BALLS;
         }else{
           //Serial.println("Backing up!");
           pulseBack();
         }
         break;
-       case TURN_90_DEGREES_LEFT:
-          turn90DegreesLeft();
-          //backUp();
-          getBallsState = BACK_UP_TO_WALL;
-          break;
-       case BACK_UP_TO_WALL:
-          if(backBumperHit()){
-             //go straight for a short period of time
-             pulseBack();
-             TMRArd_InitTimer(0, HALF_SEC);
-              while(TestTimerExpired(0) != TMRArd_EXPIRED){
-                pulseBack();
-              }
-              pulseBack();
-              getBallsState = DONE_WITH_GETTING_BALLS;
-          }else{
-            //Serial.println("Backing up!");
-            backUp();
-          }
-          break;
        case DONE_WITH_GETTING_BALLS:
        //place holder
-         globalState = TAPE_SENSING;
+         globalState = DRIVE_STRAIGHT;
          break;
     }
 }
@@ -829,26 +870,37 @@ void loop() {  // loop() function required for Arduino
     
    switch (globalState) {
     case INIT:
-      runStraight();
-      globalState = TAPE_SENSING;
+      //runStraight();
+      globalState = GET_BALLS;
       break;
     case GET_BALLS:
+      Serial.println("GET BALLS!");
       getBalls();
       break;
     case TAPE_SENSING:
-      //Serial.println("Sensing tape!");
+      Serial.println("Sensing tape!");
       senseTape();
       break;
     case DRIVE_STRAIGHT:
-      driveStraightOnTape();
+      //driveStraightOnTape();
+      Serial.println("DRIVING STRAIGHT");
+      if(frontBumperHit()){
+        for(int i=0;i<7;i++){
+          pulseBack();
+        }
+          globalState = TAPE_SENSING; 
+      }else{
+          runStraight();
+      }
       break;
     case DUNK_BALLS:
+      Serial.println("DUNKING");
       dunkBalls();
       break;
     default: 
       stopMtrs();
+      
   }
-
     
 }
 
