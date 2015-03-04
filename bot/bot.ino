@@ -644,16 +644,18 @@ void driveStraightOnTape(){
         //}
        break;
        case AT_END_OF_COURT:
-        if(!frontBumperHit()){
-            pulseStraight();
-        }else{
+        //make sure you are at the end of the court
+         for(int i=0;i<5;i++){
+           pulseStraight();
+         }
+
          //give room for rim
          for(int i=0;i<2;i++){
            pulseBack();
          }
          stopMtrs();
          globalState = DUNK_BALLS;
-        }
+
        break;
     }
     
