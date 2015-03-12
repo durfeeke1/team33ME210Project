@@ -198,8 +198,24 @@
                 <!--                 Software Design -->
                 <div class="col-lg-8 col-lg-offset-2">
                     <h2>Software Design</h2>
-                    <p>You can download Grayscale for free on the preview page at Start Bootstrap.</p>
-                
+                    <p>Our software design can be broken down into a two levels. The first is the global state machine and the second
+                    is comprised of a mini state machine for each global state.  This design is helpful because it segments the mini state
+                    machines from each other, making them easier to develop and debug independently.  It also made it easy to loop the global
+                    state machine in order to make multiple passes at the hoop.
+                    </p>
+                    <p> Global State Machine:
+                    	<li>Get Balls - used to bump the edge of the board and wait for balls to be loaded</li>
+                    	<li>Align To Drive Straight - used to position the robot to follow the left wall to the end of the board</li>
+                    	<li>Drive Straight - used to send the robot to the end of the board</li>
+                    	<li>Tape Sensing - used to find the tape in front of the hoop and make a 90 degree turn</li>
+                    	<li>Dunking - used to raise the servo and drop the balls in the hoop</li>
+                    </p>
+                    <p>Sub State Machines:
+                    	<p>Each of the sub state machines was implemented as a single function with a static variable used to keep track of
+                     	   the current state.  I would recommend this as it hides the sub state machines state from the rest of the code.  When
+                     	   the sub state machine has accomplished it's task it then changed the global state to move on to the next sub state machine.
+                     	</p>
+                	</p>
                 </div>
             </div>
         </div>
