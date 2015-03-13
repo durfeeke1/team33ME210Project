@@ -9,7 +9,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Grayscale - Start Bootstrap Theme</title>
+    <title>Team 33 Report</title>
 
     <!-- Bootstrap Core CSS -->
     <link href="css/bootstrap.min.css" rel="stylesheet">
@@ -90,12 +90,13 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2">
                 <h2>Project Overview</h2>
-<<<<<<< HEAD
-=======
-                <p>Grayscale is a free Bootstrap 3 theme created by Start Bootstrap. It can be yours right now, simply download the template on <a href="http://startbootstrap.com/template-overviews/grayscale/">the preview page</a>. The theme is open source, and you can use it for any purpose, personal or commercial.</p>
-                <p>This theme features stock photos by <a href="http://gratisography.com/">Gratisography</a> along with a custom Google Maps skin courtesy of <a href="http://snazzymaps.com/">Snazzy Maps</a>.</p>
->>>>>>> 1551834... report stuff
-                <p>Grayscale includes full HTML, CSS, and custom JavaScript files along with LESS files for easy customization.</p>
+                <img src="img/teamPhoto.jpg"><img>
+                <p>Team Members: Kevin Durfee, Carey Smith, Ryan Wolff, Maria Malone</p>
+                
+                <p> As the ME 210 Robot Project sat on our Winter Quarter horizon, Team 0 to 2 (Real Quick) pondered our overall strategy. While we wanted to put 100% effort into the project, we also valued our health and other classes. We deemed ourselves to be a “Shallow Grave” group – we wanted to do enough work to check off and learn a lot, but weren’t preparing ourselves to win the competition. </p>
+                <p> When the project was assigned we decided early on that we would not do beacon sensing, and instead we chose to use the tape on the board to align ourselves with the 1 point basket on our side of the court. </p>
+            
+            	<p> Here is our story. </p>
             </div>
         </div>
     </section>
@@ -107,8 +108,16 @@
 <!--                 Sub system overview -->
                 <div class="col-lg-8 col-lg-offset-2">
                     <h2>DrizzyBot / Cheff Curry - Sub Systems</h2>
-                    <p>You can download Grayscale for free on the preview page at Start Bootstrap.</p>
-                   
+                    <h3> Bill Of Materials </h3>
+                    <!-- 
+<p>Arduino Uno: 1, Jameco 162191 Motor: 2, BaneBots Wheel 2-7/8"x0.8" 1/2" HexMount: 2,
+BaneBots Hub 12" Hex, series 40 w/ 4mm Bore: 2, HS-322HD Servo motor 1, L293 Driver PCB Rev 3: 1, 5V Regulator: 1, 12V Regulator: 1, LM339N Op-Amp: 1, LM324N Comparator: 1, Switches: 2, 5mm LED: 3, 1 Amp Fuse: 1, 5 Amp Fuse: 1, Threaded rod 5/16" 1': 4, L brackets: 4, Clear Acrylic 1/4" 1'x1': 1, Duron 1/8" 2'x4': 2,
+Caster wheel: 1, Bearing: 1
+</p>
+ -->
+<img src="img/BOM2.png"></img>
+                   <br/>
+                   <br/>
                 </div>
             </div>
             
@@ -116,7 +125,32 @@
 <!--                 Mechanical Design -->
                 <div class="col-lg-8 col-lg-offset-2">
                     <h2>Mechanical Design</h2>
-                    <p>You can download Grayscale for free on the preview page at Start Bootstrap.</p>
+                    <h3>Overall Chassis Design</h3>
+                    
+                    <p>We chose a body shape that we thought would be ideal to keep us out of corners yet still align us square on the wall behind us. However the radius of the nose of the body did render us useless in some corners when starting from certain positions on the court. A square bot, though, would not have kept us from getting stuck in corners either. Overall bot design could have been improved with a circular bot base. Implementing alignment bumpers similar to the ones currently on Drizzy Bot/Chef Curry would have still allowed a circular design to accurately line and square up on the wall.   </p>
+                    <img src="img/cadSideView.png"><img>
+                    <p> </p>
+                    
+                    
+                    <h3>Drive Train</h3>
+                    
+                    <p>The secure mounting of our motor to both the body of the bot and the wheels was crucial in order to get a reliable driving bot that wasn’t unstable or weak. Initially, we used two similar motor mounts on each side, each of which cradled the motor to keep it from falling. These two mounts were then fixed a distance apart using bolts and nuts. However, because it was difficult to get the precise tolerance in the motor mounts, there was just enough “slop” and freedom for the motors to move and shift within the mount. We then decided it would be best to create just one motor mount for each side, which bolted into the face of the motor and was then secured to the base of the bot through an L-bracket. This was a reliable method for motor stabilization, albeit not the most intricate or aesthetically pleasing. However, because it was a method that worked well, we decided to move forward with the construction of the rest of our bot. </p>
+                    <img src="img/cadBase.png"><img>
+                    
+                    <p> </p>
+                    
+                    <h3>Tape Sensors</h3>
+                    
+                    <p> The mechanical design of our tape sensor setup was crucial to the successful functioning of the system as a whole. If the spacing of the sensors was slightly off, the accuracy of both tape sensing and following would be lower than it potentially could be. When using tape sensors, the spacing is crucial but so is the position of the tape sensors relative to the board. Because the tape sensors easily could pick up ambient light, the ideal height of the tip of the sensors was 1mm-4mm above the board. Additionally, the tip of the sensors needed to be as parallel to the board as possible. Because different times of day and conditions could easily affect the reading of the tape sensors, we wanted to have the freedom and ability to adjust the positioning of each tape sensor and the sensor platform as a whole. Therefore each sensor was mounted to its own individual backplate, which itself was secured to the tape sensor platform. The screw which attached each tape sensor to the backplate allowed for individual tape sensor height adjustment fairly easily. (Each tape sensor has an optimally sized slot for a 4-40 screw to be used for mounting). The platform height was adjustable using a double nut design. If tape sensors are used, we highly suggest using some sort of adjustable design, similar to what we used. This allows for fine-tuning of the physical tape sensing system for optimal readings and response. </p>
+                    <img src="img/cadTapeSide.png"><img>
+                    <img src="img/cadTapeTop.png"><img>
+                 	<p> </p>   
+                 
+                    <h3>Shooting Mechanism</h3>
+                    
+                    <p>Initially we couldn’t settle on an approach for scoring points. So we wavered between doing a shooter and dunker for a while. Because we lost a lot of time in limbo between the two, we decided that the most efficient use of our time was to implement a dunker in order check off. Our thoughts were to then perfect it when/if we had time. Because we worked to check off early, we used a dunk mechanism that ended up completing the challenge, yet was a visual eye sore. Our initial more intricate design implementing a natural hinge ended up being too heavy. While we liked the look and experiment with design much more, we knew that a more simple and light solution was needed to not overstress our servo motor. </p>
+                    <img src="img/cadTopLayer.png"><img>
+                    <p> </p>
                     
                 </div>
             </div>
@@ -203,21 +237,20 @@
                     machines from each other, making them easier to develop and debug independently.  It also made it easy to loop the global
                     state machine in order to make multiple passes at the hoop.
                     </p>
-                    <p> Global State Machine:
+                    <p> <h3>Global State Machine</h3>
                     	<li>Get Balls - used to bump the edge of the board and wait for balls to be loaded</li>
                     	<li>Align To Drive Straight - used to position the robot to follow the left wall to the end of the board</li>
                     	<li>Drive Straight - used to send the robot to the end of the board</li>
                     	<li>Tape Sensing - used to find the tape in front of the hoop and make a 90 degree turn</li>
                     	<li>Dunking - used to raise the servo and drop the balls in the hoop</li>
                     </p>
-                    <p>Sub State Machines:
+                    <p><h3>Sub State Machines:</h3>
                     	<p>Each of the sub state machines was implemented as a single function with a static variable used to keep track of
                      	   the current state.  I would recommend this as it hides the sub state machines state from the rest of the code.  When
                      	   the sub state machine has accomplished it's task it then changed the global state to move on to the next sub state machine.
                      	</p>
                 	</p>
                 	</p>
-                		Git Hub Link: <a href ="https://github.com/durfeeke1/team33ME210Project/">Team 33 Github </a>
                 	</p>
                 </div>
             </div>
@@ -229,32 +262,29 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2">
                 <h2>What we learned</h2>
-                <p>Feel free to email us to provide some feedback on our templates, give us suggestions for new templates and themes, or to just say hello!</p>
-                <p><a href="mailto:feedback@startbootstrap.com">feedback@startbootstrap.com</a>
+                <p>We executed our plan but made changes along the way, the best practice we can recommend is to anticipate and prepare for unknown changes. The best way to do this is designing for testing. Build your components to be sturdy but flexible and provide feedback. 
+
+The first mount for our tape sensors allowed us to adjust the distance between them. It was quick, flexible and we could immediately change the arrangement based on observations we wouldn’t have predicted.
+				</p>
+				<p>
+
+Our tape sensors were arranged close together on the underside of the bot and very difficult to see which sensor was over tape at any time. We integrated LEDs into our tape sensing circuit that indicated when each tape sensor was reading Hi at any given moment. This helped in most cases but as we progressed our states were dependent the previous tape sensor reading as well as the most recent. To solve this issue, we arranged the arduino to allow for “tethered” testing. The serial monitor displayed which state our bot was in and anytime the sensors changed. With this information could determine the exact path the bot and sensors took over the tape and how to correct it. 
+
+We designed and built many of the components in parallel but upon integration ran into multiple problems (Here’s a tip - using the Servo library disables the PWM functionality of pins 9 & 10, so don’t use them to run your motors). Swapping chassis also changed the weight distribution, negating the time spent calibrating the motors on the first version. 
+				</p>
+				<p>
+The language and naming conventions should also be made clear early on. Things can get confusing when you start turning, moving in reverse, increase the power of the right motor to turn left, etc. Like in theatre, they have a convention of stage right/left, discuss the behavior of your bot in a consistent manner and comment your code accordingly.
+				</p>
+				<p>
+Remember to step back and look at how everything works together. There are many solutions to every problem. If you are having trouble getting results with an electrical component like the tape sensors, think about a software or mechanical solution. You could change the hysteresis or change where they are mounted or you could change another part of the bot entirely. We modified the shape of our bot and used its geometry to orient ourselves perpendicular to the walls. This allowed for a consistent approach angle to the tape which was crucial for our alignment with the basket. Don’t underestimate the physical world! Cut out a model of your bot and walk it around the game board, walk it around, take it through your states step by step. 
                 </p>
-                <ul class="list-inline banner-social-buttons">
-                    <li>
-                        <a href="https://twitter.com/SBootstrap" class="btn btn-default btn-lg"><i class="fa fa-twitter fa-fw"></i> <span class="network-name">Twitter</span></a>
-                    </li>
-                    <li>
-                        <a href="https://github.com/IronSummitMedia/startbootstrap" class="btn btn-default btn-lg"><i class="fa fa-github fa-fw"></i> <span class="network-name">Github</span></a>
-                    </li>
-                    <li>
-                        <a href="https://plus.google.com/+Startbootstrap/posts" class="btn btn-default btn-lg"><i class="fa fa-google-plus fa-fw"></i> <span class="network-name">Google+</span></a>
-                    </li>
-                </ul>
+               
             </div>
         </div>
     </section>
 
     <!-- Map Section -->
-    <div id="map"></div>
 
-    <!-- Footer -->
-    <footer>
-        <div class="container text-center">
-            <p>Copyright &copy; Your Website 2014</p>
-        </div>
     </footer>
 
     <!-- jQuery -->
